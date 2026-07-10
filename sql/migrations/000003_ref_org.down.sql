@@ -1,0 +1,7 @@
+-- +migrate Down
+DROP TABLE IF EXISTS vehicle_depots CASCADE;
+DROP TABLE IF EXISTS refinery_facilities CASCADE;
+DROP TABLE IF EXISTS refineries CASCADE;
+DROP TABLE IF EXISTS system_settings CASCADE;
+DROP TABLE IF EXISTS fuel_types CASCADE;
+DROP TABLE IF EXISTS regions CASCADE;

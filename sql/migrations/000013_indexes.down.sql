@@ -1,0 +1,2 @@
+-- +migrate Down
+-- Indexes are automatically dropped with their tables. This is a no-op safety net.

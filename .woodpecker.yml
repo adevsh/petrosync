@@ -1,0 +1,19 @@
+steps:
+  build-api:
+    image: golang:1.23
+    when:
+      path:
+        - "cmd/**"
+        - "internal/**"
+        - "sql/migrations/**"
+        - "schema.sql"
+        - "sql/queries/**"
+        - "go.mod"
+        - "go.sum"
+
+  build-css:
+    image: oven/bun:latest
+    when:
+      path:
+        - "static/css/**"
+        - "templates/**"

@@ -1,0 +1,63 @@
+services:
+  # ── PostgreSQL 16 + PostGIS ────────────────────────────────────────────
+  postgres:
+    image: postgis/postgis:16-3.4
+    platform: linux/amd64
+    container_name: petrosync-postgres
+    environment:
+      POSTGRES_USER: petrosync_app
+      POSTGRES_PASSWORD: petrosync_dev
+      POSTGRES_DB: petrosync
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petrosync_app -d petrosync"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - petrosync
+
+  # ── Valkey 8 (cache, sessions, pub/sub) ────────────────────────────────
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: petrosync-valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    command: valkey-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - petrosync
+
+  # ── Garage (S3-compatible object storage) ──────────────────────────────
+  garage:
+    image: dxflrs/garage:v1.0.1
+    container_name: petrosync-garage
+    ports:
+      - "3900:3900" # S3 API
+      - "3901:3901" # RPC
+      - "3902:3902" # Web
+    volumes:
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+      - ./docker/garage.toml:/etc/garage.toml:ro
+    networks:
+      - petrosync
+
+volumes:
+  postgres_data:
+  valkey_data:
+  garage_meta:
+  garage_data:
+
+networks:
+  petrosync:
+    driver: bridge

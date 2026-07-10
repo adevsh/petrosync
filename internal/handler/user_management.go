@@ -559,9 +559,9 @@ func (h *ResetPasswordHandler) ResetPassword(c *gin.Context) {
 	middleware.SetAuditEntity(c, "users", req.UserID)
 
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{
-		"message":        "password reset",
+		"message":         "password reset",
 		"telegram_linked": linked,
-		"temp_password":  tempPassword,
+		"temp_password":   tempPassword,
 	}})
 }
 

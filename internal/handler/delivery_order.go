@@ -32,7 +32,9 @@ func (h *DeliveryOrderHandler) ListByFacility(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
-	if dos == nil { dos = []db.DeliveryOrder{} }
+	if dos == nil {
+		dos = []db.DeliveryOrder{}
+	}
 	c.JSON(http.StatusOK, gin.H{"data": dos})
 }
 
@@ -43,7 +45,9 @@ func (h *DeliveryOrderHandler) ListDispatchQueue(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
-	if dos == nil { dos = []db.ListDOsForDispatchQueueRow{} }
+	if dos == nil {
+		dos = []db.ListDOsForDispatchQueueRow{}
+	}
 	c.JSON(http.StatusOK, gin.H{"data": dos})
 }
 
@@ -121,7 +125,7 @@ func (h *DeliveryOrderHandler) AssignVehicleAndDriver(c *gin.Context) {
 		middleware.SetAuditBefore(c, before)
 	}
 	do, err := h.querier.AssignVehicleAndDriverToDO(c.Request.Context(), db.AssignVehicleAndDriverToDOParams{
-		ID: id,
+		ID:                id,
 		AssignedVehicleID: pgtype.Int8{Int64: req.VehicleID, Valid: true},
 		AssignedDriverID:  pgtype.Int8{Int64: req.DriverID, Valid: true},
 	})
@@ -160,7 +164,9 @@ func (h *DeliveryOrderHandler) ListItems(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
-	if items == nil { items = []db.ListDOItemsByDORow{} }
+	if items == nil {
+		items = []db.ListDOItemsByDORow{}
+	}
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 

@@ -6,9 +6,9 @@
 -- name: InsertNotification :one
 INSERT INTO notification_log (
     trip_id, do_id, recipient_telegram_id, recipient_user_id,
-    notification_type, message_text, delivery_status, telegram_message_id
+    notification_type, message_text, delivery_status, telegram_message_id, error_message
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
 RETURNING *;
 

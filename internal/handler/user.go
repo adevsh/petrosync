@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/adevsh/petrosync/internal/middleware"
 	"github.com/adevsh/petrosync/internal/model"
 	"github.com/adevsh/petrosync/internal/service"
 )
@@ -117,6 +118,9 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	_ = h.authService.Logout(c.Request.Context(), req.RefreshToken)
+	middleware.SetAuditAction(c, "AUTH_LOGOUT")
+	middleware.SetAuditEntity(c, "auth", 0)
+	middleware.SetAuditAfter(c, gin.H{"logged_out": true})
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"message": "logged out"}})
 }
 
@@ -143,7 +147,12 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	err := h.authService.ChangePassword(c.Request.Context(), userID.(int64), req.CurrentPassword, req.NewPassword)
+	uid := userID.(int64)
+	middleware.SetAuditAction(c, "AUTH_CHANGE_PASSWORD")
+	middleware.SetAuditEntity(c, "users", uid)
+	middleware.SetAuditBefore(c, gin.H{"user_id": uid})
+
+	err := h.authService.ChangePassword(c.Request.Context(), uid, req.CurrentPassword, req.NewPassword)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrPasswordMismatch):
@@ -158,6 +167,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
+	middleware.SetAuditAfter(c, gin.H{"password_changed": true})
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"message": "password changed"}})
 }
 

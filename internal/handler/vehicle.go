@@ -8,6 +8,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/adevsh/petrosync/internal/db"
+	"github.com/adevsh/petrosync/internal/middleware"
+	"github.com/adevsh/petrosync/internal/model"
 )
 
 // VehicleHandler handles vehicle and compartment endpoints.
@@ -41,15 +43,62 @@ func (h *VehicleHandler) ListVehiclesByDepot(c *gin.Context) {
 
 func (h *VehicleHandler) ListVehiclesByStatus(c *gin.Context) {
 	status := db.VehicleStatusT(c.Query("status"))
-	vehicles, err := h.querier.ListVehiclesByStatus(c.Request.Context(), status)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
-		return
+	rolesVal, _ := c.Get("roles")
+	roles, _ := rolesVal.([]model.RoleGrant)
+	ctx := c.Request.Context()
+
+	bestRank := 0
+	var best model.RoleGrant
+	for _, r := range roles {
+		if r.Role == "SYSTEM_ADMIN" {
+			best = r
+			bestRank = middleware.RoleRank("SYSTEM_ADMIN")
+			break
+		}
+		if rank := middleware.RoleRank(r.Role); rank > bestRank {
+			bestRank = rank
+			best = r
+		}
 	}
-	if vehicles == nil {
-		vehicles = []db.ListVehiclesByStatusRow{}
+
+	switch {
+	case best.Role == "SYSTEM_ADMIN":
+		vehicles, err := h.querier.ListVehiclesByStatus(ctx, status)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": vehicles})
+	case best.Role == "REFINERY_ADMIN" && best.ScopeType == "REFINERY" && best.ScopeID != nil:
+		vehicles, err := h.querier.ListVehiclesByStatusAndRefinery(ctx, db.ListVehiclesByStatusAndRefineryParams{
+			Status: status, RefineryID: *best.ScopeID,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": vehicles})
+	case (best.Role == "FACILITY_MANAGER" || best.Role == "FACILITY_OPERATOR") && best.ScopeType == "FACILITY" && best.ScopeID != nil:
+		vehicles, err := h.querier.ListVehiclesByStatusAndFacility(ctx, db.ListVehiclesByStatusAndFacilityParams{
+			Status: status, PrimaryFacilityID: *best.ScopeID,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": vehicles})
+	case best.Role == "DEPOT_STAFF" && best.ScopeType == "DEPOT" && best.ScopeID != nil:
+		vehicles, err := h.querier.ListVehiclesByStatusAndDepot(ctx, db.ListVehiclesByStatusAndDepotParams{
+			Status: status, CurrentDepotID: pgtype.Int8{Int64: *best.ScopeID, Valid: true},
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": vehicles})
+	default:
+		c.JSON(http.StatusForbidden, gin.H{"error": gin.H{"code": "FORBIDDEN", "message": "no applicable role scope"}})
 	}
-	c.JSON(http.StatusOK, gin.H{"data": vehicles})
 }
 
 func (h *VehicleHandler) GetVehicle(c *gin.Context) {
@@ -73,6 +122,9 @@ func (h *VehicleHandler) CreateVehicle(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
+	middleware.SetAuditAction(c, "VEHICLE_CREATE")
+	middleware.SetAuditEntity(c, "vehicles", v.ID)
+	middleware.SetAuditAfter(c, v)
 	c.JSON(http.StatusCreated, gin.H{"data": v})
 }
 
@@ -102,5 +154,8 @@ func (h *VehicleHandler) CreateCompartment(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
+	middleware.SetAuditAction(c, "VEHICLE_COMPARTMENT_CREATE")
+	middleware.SetAuditEntity(c, "vehicle_compartments", comp.ID)
+	middleware.SetAuditAfter(c, comp)
 	c.JSON(http.StatusCreated, gin.H{"data": comp})
 }

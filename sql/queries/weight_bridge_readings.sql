@@ -44,6 +44,19 @@ WHERE wbr.method          = 'MANUAL_APPROVED'
       )
 ORDER BY wbr.created_at ASC;
 
+-- name: ListOverduePendingManualApprovals :many
+SELECT
+    wbr.*,
+    v.plate_number,
+    u.full_name AS recorded_by_name
+FROM weight_bridge_readings wbr
+JOIN vehicles v ON v.id = wbr.vehicle_id
+JOIN users    u ON u.id = wbr.recorded_by
+WHERE wbr.method          = 'MANUAL_APPROVED'
+  AND wbr.approval_status = 'PENDING'
+  AND wbr.created_at < NOW() - make_interval(hours => $1)
+ORDER BY wbr.created_at ASC;
+
 -- name: ListEscalatedApprovals :many
 -- Refinery Admin escalation queue (company-wide).
 SELECT

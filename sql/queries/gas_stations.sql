@@ -60,6 +60,27 @@ FROM gas_stations gs
 WHERE gs.active = TRUE
 ORDER BY gs.region_code, gs.name;
 
+-- name: ListAllActiveStationsByRefineryScope :many
+SELECT
+    gs.*,
+    ST_X(gs.location) AS longitude,
+    ST_Y(gs.location) AS latitude
+FROM gas_stations gs
+JOIN refinery_facilities rf ON rf.id = gs.primary_facility_id
+WHERE gs.active = TRUE
+  AND rf.refinery_id = $1
+ORDER BY gs.region_code, gs.name;
+
+-- name: ListAllActiveStationsByStationScope :many
+SELECT
+    gs.*,
+    ST_X(gs.location) AS longitude,
+    ST_Y(gs.location) AS latitude
+FROM gas_stations gs
+WHERE gs.active = TRUE
+  AND gs.id = $1
+ORDER BY gs.region_code, gs.name;
+
 -- name: CreateStation :one
 INSERT INTO gas_stations (
     code, name, spbu_license_number, region_code, primary_facility_id,

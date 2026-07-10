@@ -58,6 +58,23 @@ WHERE urg.role       = $1
   AND u.active       = TRUE
 ORDER BY u.full_name;
 
+-- name: ListUsersWithCompanyRole :many
+SELECT
+    u.id,
+    u.username,
+    u.full_name,
+    u.telegram_user_id,
+    u.active,
+    urg.granted_at
+FROM user_role_grants urg
+JOIN users u ON u.id = urg.user_id
+WHERE urg.role       = $1
+  AND urg.scope_type = 'COMPANY'
+  AND urg.scope_id IS NULL
+  AND urg.revoked_at IS NULL
+  AND u.active       = TRUE
+ORDER BY u.full_name;
+
 -- name: GrantRole :one
 INSERT INTO user_role_grants (user_id, role, scope_type, scope_id, granted_by)
 VALUES ($1, $2, $3, $4, $5)

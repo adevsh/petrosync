@@ -266,6 +266,145 @@ func (q *Queries) ListAllActiveStations(ctx context.Context) ([]ListAllActiveSta
 	return items, nil
 }
 
+const listAllActiveStationsByRefineryScope = `-- name: ListAllActiveStationsByRefineryScope :many
+SELECT
+    gs.id, gs.code, gs.name, gs.spbu_license_number, gs.region_code, gs.primary_facility_id, gs.location, gs.address, gs.operating_hours_start, gs.operating_hours_end, gs.contact_name, gs.contact_phone, gs.active, gs.created_at, gs.updated_at,
+    ST_X(gs.location) AS longitude,
+    ST_Y(gs.location) AS latitude
+FROM gas_stations gs
+JOIN refinery_facilities rf ON rf.id = gs.primary_facility_id
+WHERE gs.active = TRUE
+  AND rf.refinery_id = $1
+ORDER BY gs.region_code, gs.name
+`
+
+type ListAllActiveStationsByRefineryScopeRow struct {
+	ID                  int64              `json:"id"`
+	Code                string             `json:"code"`
+	Name                string             `json:"name"`
+	SpbuLicenseNumber   string             `json:"spbu_license_number"`
+	RegionCode          string             `json:"region_code"`
+	PrimaryFacilityID   int64              `json:"primary_facility_id"`
+	Location            interface{}        `json:"location"`
+	Address             pgtype.Text        `json:"address"`
+	OperatingHoursStart pgtype.Time        `json:"operating_hours_start"`
+	OperatingHoursEnd   pgtype.Time        `json:"operating_hours_end"`
+	ContactName         pgtype.Text        `json:"contact_name"`
+	ContactPhone        pgtype.Text        `json:"contact_phone"`
+	Active              bool               `json:"active"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+	Longitude           interface{}        `json:"longitude"`
+	Latitude            interface{}        `json:"latitude"`
+}
+
+func (q *Queries) ListAllActiveStationsByRefineryScope(ctx context.Context, refineryID int64) ([]ListAllActiveStationsByRefineryScopeRow, error) {
+	rows, err := q.db.Query(ctx, listAllActiveStationsByRefineryScope, refineryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllActiveStationsByRefineryScopeRow{}
+	for rows.Next() {
+		var i ListAllActiveStationsByRefineryScopeRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.Name,
+			&i.SpbuLicenseNumber,
+			&i.RegionCode,
+			&i.PrimaryFacilityID,
+			&i.Location,
+			&i.Address,
+			&i.OperatingHoursStart,
+			&i.OperatingHoursEnd,
+			&i.ContactName,
+			&i.ContactPhone,
+			&i.Active,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Longitude,
+			&i.Latitude,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllActiveStationsByStationScope = `-- name: ListAllActiveStationsByStationScope :many
+SELECT
+    gs.id, gs.code, gs.name, gs.spbu_license_number, gs.region_code, gs.primary_facility_id, gs.location, gs.address, gs.operating_hours_start, gs.operating_hours_end, gs.contact_name, gs.contact_phone, gs.active, gs.created_at, gs.updated_at,
+    ST_X(gs.location) AS longitude,
+    ST_Y(gs.location) AS latitude
+FROM gas_stations gs
+WHERE gs.active = TRUE
+  AND gs.id = $1
+ORDER BY gs.region_code, gs.name
+`
+
+type ListAllActiveStationsByStationScopeRow struct {
+	ID                  int64              `json:"id"`
+	Code                string             `json:"code"`
+	Name                string             `json:"name"`
+	SpbuLicenseNumber   string             `json:"spbu_license_number"`
+	RegionCode          string             `json:"region_code"`
+	PrimaryFacilityID   int64              `json:"primary_facility_id"`
+	Location            interface{}        `json:"location"`
+	Address             pgtype.Text        `json:"address"`
+	OperatingHoursStart pgtype.Time        `json:"operating_hours_start"`
+	OperatingHoursEnd   pgtype.Time        `json:"operating_hours_end"`
+	ContactName         pgtype.Text        `json:"contact_name"`
+	ContactPhone        pgtype.Text        `json:"contact_phone"`
+	Active              bool               `json:"active"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+	Longitude           interface{}        `json:"longitude"`
+	Latitude            interface{}        `json:"latitude"`
+}
+
+func (q *Queries) ListAllActiveStationsByStationScope(ctx context.Context, id int64) ([]ListAllActiveStationsByStationScopeRow, error) {
+	rows, err := q.db.Query(ctx, listAllActiveStationsByStationScope, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAllActiveStationsByStationScopeRow{}
+	for rows.Next() {
+		var i ListAllActiveStationsByStationScopeRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.Name,
+			&i.SpbuLicenseNumber,
+			&i.RegionCode,
+			&i.PrimaryFacilityID,
+			&i.Location,
+			&i.Address,
+			&i.OperatingHoursStart,
+			&i.OperatingHoursEnd,
+			&i.ContactName,
+			&i.ContactPhone,
+			&i.Active,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Longitude,
+			&i.Latitude,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStationsByFacility = `-- name: ListStationsByFacility :many
 SELECT
     gs.id, gs.code, gs.name, gs.spbu_license_number, gs.region_code, gs.primary_facility_id, gs.location, gs.address, gs.operating_hours_start, gs.operating_hours_end, gs.contact_name, gs.contact_phone, gs.active, gs.created_at, gs.updated_at,

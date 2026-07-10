@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/adevsh/petrosync/internal/db"
+	"github.com/adevsh/petrosync/internal/middleware"
 )
 
 // QRHandler handles QR code validation endpoints.
@@ -23,6 +24,7 @@ type qrValidateReq struct {
 
 // Validate checks that a scanned QR payload matches the expected trip context.
 func (h *QRHandler) Validate(c *gin.Context) {
+	middleware.SkipAudit(c)
 	var req qrValidateReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()}})

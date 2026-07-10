@@ -115,6 +115,68 @@ func (v *ValkeyService) DeleteRefreshToken(ctx context.Context, token string) er
 	return v.client.Do(ctx, v.client.B().Del().Key(key).Build()).Error()
 }
 
+// ── RBAC Cache ─────────────────────────────────────────────────────────
+
+func (v *ValkeyService) GetRoleGrants(ctx context.Context, userID int64) ([]model.RoleGrant, bool, error) {
+	key := fmt.Sprintf("rbac:%d", userID)
+	result, err := v.client.Do(ctx, v.client.B().Get().Key(key).Build()).ToString()
+	if err != nil {
+		return nil, false, nil
+	}
+	var grants []model.RoleGrant
+	if err := json.Unmarshal([]byte(result), &grants); err != nil {
+		return nil, false, fmt.Errorf("unmarshal rbac cache: %w", err)
+	}
+	if grants == nil {
+		grants = []model.RoleGrant{}
+	}
+	return grants, true, nil
+}
+
+func (v *ValkeyService) SetRoleGrants(ctx context.Context, userID int64, grants []model.RoleGrant, ttl time.Duration) error {
+	payload, err := json.Marshal(grants)
+	if err != nil {
+		return fmt.Errorf("marshal rbac cache: %w", err)
+	}
+	key := fmt.Sprintf("rbac:%d", userID)
+	return v.client.Do(ctx, v.client.B().Set().Key(key).Value(string(payload)).Px(ttl).Build()).Error()
+}
+
+func (v *ValkeyService) DeleteRoleGrants(ctx context.Context, userID int64) error {
+	key := fmt.Sprintf("rbac:%d", userID)
+	return v.client.Do(ctx, v.client.B().Del().Key(key).Build()).Error()
+}
+
+func (v *ValkeyService) GetUserActive(ctx context.Context, userID int64) (bool, bool, error) {
+	key := fmt.Sprintf("user:active:%d", userID)
+	result, err := v.client.Do(ctx, v.client.B().Get().Key(key).Build()).ToString()
+	if err != nil {
+		return false, false, nil
+	}
+	switch result {
+	case "1":
+		return true, true, nil
+	case "0":
+		return false, true, nil
+	default:
+		return false, false, fmt.Errorf("invalid user active cache value")
+	}
+}
+
+func (v *ValkeyService) SetUserActive(ctx context.Context, userID int64, active bool, ttl time.Duration) error {
+	key := fmt.Sprintf("user:active:%d", userID)
+	val := "0"
+	if active {
+		val = "1"
+	}
+	return v.client.Do(ctx, v.client.B().Set().Key(key).Value(val).Px(ttl).Build()).Error()
+}
+
+func (v *ValkeyService) DeleteUserActive(ctx context.Context, userID int64) error {
+	key := fmt.Sprintf("user:active:%d", userID)
+	return v.client.Do(ctx, v.client.B().Del().Key(key).Build()).Error()
+}
+
 // ── Pub/Sub ───────────────────────────────────────────────────────────
 
 // Publish sends a message on a Valkey channel (used for GPS → WebSocket bridge).

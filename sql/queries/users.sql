@@ -46,6 +46,27 @@ RETURNING id, username, full_name, telegram_user_id,
           telegram_linked_at, force_password_change, active,
           last_login_at, created_at, updated_at;
 
+-- name: UpdateUser :one
+UPDATE users
+SET
+    username   = $2,
+    full_name  = $3,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, username, full_name, telegram_user_id,
+          telegram_linked_at, force_password_change, active,
+          last_login_at, created_at, updated_at;
+
+-- name: SetUserActive :one
+UPDATE users
+SET
+    active     = $2,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, username, full_name, telegram_user_id,
+          telegram_linked_at, force_password_change, active,
+          last_login_at, created_at, updated_at;
+
 -- name: UpdateUserPassword :exec
 UPDATE users
 SET

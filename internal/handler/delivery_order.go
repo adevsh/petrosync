@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -8,15 +10,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/adevsh/petrosync/internal/db"
+	"github.com/adevsh/petrosync/internal/middleware"
+	"github.com/adevsh/petrosync/internal/service"
 )
 
 // DeliveryOrderHandler handles delivery order endpoints.
 type DeliveryOrderHandler struct {
-	querier *db.Queries
+	querier  *db.Queries
+	workflow *service.WorkflowService
+	notif    *service.NotificationService
 }
 
-func NewDeliveryOrderHandler(querier *db.Queries) *DeliveryOrderHandler {
-	return &DeliveryOrderHandler{querier: querier}
+func NewDeliveryOrderHandler(querier *db.Queries, workflow *service.WorkflowService, notif *service.NotificationService) *DeliveryOrderHandler {
+	return &DeliveryOrderHandler{querier: querier, workflow: workflow, notif: notif}
 }
 
 func (h *DeliveryOrderHandler) ListByFacility(c *gin.Context) {
@@ -62,6 +68,18 @@ func (h *DeliveryOrderHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
+	middleware.SetAuditAction(c, "DELIVERY_ORDER_CREATE")
+	middleware.SetAuditEntity(c, "delivery_orders", do.ID)
+	middleware.SetAuditAfter(c, do)
+
+	// Fire-and-forget notification
+	if h.notif != nil {
+		go h.notif.Send(c.Request.Context(), service.SendNotificationRequest{
+			DOID: &do.ID, NotificationType: db.NotificationTypeTDORAISED,
+			MessageText: fmt.Sprintf("DO %s created", do.DoNumber),
+		})
+	}
+
 	c.JSON(http.StatusCreated, gin.H{"data": do})
 }
 
@@ -69,13 +87,22 @@ func (h *DeliveryOrderHandler) Create(c *gin.Context) {
 func (h *DeliveryOrderHandler) Approve(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	userID := c.GetInt64("user_id")
-	do, err := h.querier.ApproveDeliveryOrder(c.Request.Context(), db.ApproveDeliveryOrderParams{
-		ID: id, ApprovedBy: pgtype.Int8{Int64: userID, Valid: true},
-	})
+	if before, err := h.querier.GetDeliveryOrder(c.Request.Context(), id); err == nil {
+		middleware.SetAuditBefore(c, before)
+	}
+	do, err := h.workflow.ApproveDeliveryOrder(c.Request.Context(), id, userID)
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "CONFLICT", "message": "DO not in PENDING_APPROVAL state"}})
+		switch {
+		case errors.Is(err, service.ErrInsufficientStock):
+			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "INSUFFICIENT_STOCK", "message": "insufficient storage tank stock"}})
+		default:
+			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "CONFLICT", "message": "DO not in PENDING_APPROVAL state"}})
+		}
 		return
 	}
+	middleware.SetAuditAction(c, "DELIVERY_ORDER_APPROVE")
+	middleware.SetAuditEntity(c, "delivery_orders", id)
+	middleware.SetAuditAfter(c, do)
 	c.JSON(http.StatusOK, gin.H{"data": do})
 }
 
@@ -90,6 +117,9 @@ func (h *DeliveryOrderHandler) AssignVehicleAndDriver(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()}})
 		return
 	}
+	if before, err := h.querier.GetDeliveryOrder(c.Request.Context(), id); err == nil {
+		middleware.SetAuditBefore(c, before)
+	}
 	do, err := h.querier.AssignVehicleAndDriverToDO(c.Request.Context(), db.AssignVehicleAndDriverToDOParams{
 		ID: id,
 		AssignedVehicleID: pgtype.Int8{Int64: req.VehicleID, Valid: true},
@@ -99,17 +129,26 @@ func (h *DeliveryOrderHandler) AssignVehicleAndDriver(c *gin.Context) {
 		c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "CONFLICT", "message": "DO not in APPROVED state"}})
 		return
 	}
+	middleware.SetAuditAction(c, "DELIVERY_ORDER_ASSIGN")
+	middleware.SetAuditEntity(c, "delivery_orders", id)
+	middleware.SetAuditAfter(c, do)
 	c.JSON(http.StatusOK, gin.H{"data": do})
 }
 
 // Cancel cancels a delivery order that hasn't started yet.
 func (h *DeliveryOrderHandler) Cancel(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	do, err := h.querier.CancelDeliveryOrder(c.Request.Context(), id)
+	if before, err := h.querier.GetDeliveryOrder(c.Request.Context(), id); err == nil {
+		middleware.SetAuditBefore(c, before)
+	}
+	do, err := h.workflow.CancelDeliveryOrder(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": gin.H{"code": "CONFLICT", "message": "DO cannot be cancelled"}})
 		return
 	}
+	middleware.SetAuditAction(c, "DELIVERY_ORDER_CANCEL")
+	middleware.SetAuditEntity(c, "delivery_orders", id)
+	middleware.SetAuditAfter(c, do)
 	c.JSON(http.StatusOK, gin.H{"data": do})
 }
 
@@ -137,5 +176,8 @@ func (h *DeliveryOrderHandler) CreateItem(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
+	middleware.SetAuditAction(c, "DELIVERY_ORDER_ITEM_CREATE")
+	middleware.SetAuditEntity(c, "delivery_order_items", item.ID)
+	middleware.SetAuditAfter(c, item)
 	c.JSON(http.StatusCreated, gin.H{"data": item})
 }

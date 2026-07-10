@@ -57,6 +57,95 @@ LEFT JOIN gas_stations gs ON gs.id = t.destination_station_id
 WHERE t.status IN ('LOADING','LOADED','IN_TRANSIT','ARRIVED','UNLOADING')
 ORDER BY t.departed_at ASC NULLS LAST;
 
+-- name: ListActiveTripsByFacilityScope :many
+SELECT
+    t.id,
+    t.status,
+    t.vehicle_id,
+    t.driver_id,
+    t.origin_facility_id,
+    t.destination_station_id,
+    t.departed_at,
+    v.plate_number,
+    u.full_name        AS driver_name,
+    u.telegram_user_id AS driver_telegram_id,
+    gs.name            AS destination_name
+FROM trips t
+JOIN vehicles          v  ON v.id  = t.vehicle_id
+JOIN drivers           d  ON d.id  = t.driver_id
+JOIN users             u  ON u.id  = d.user_id
+LEFT JOIN gas_stations gs ON gs.id = t.destination_station_id
+WHERE t.status IN ('LOADING','LOADED','IN_TRANSIT','ARRIVED','UNLOADING')
+  AND t.origin_facility_id = $1
+ORDER BY t.departed_at ASC NULLS LAST;
+
+-- name: ListActiveTripsByRefineryScope :many
+SELECT
+    t.id,
+    t.status,
+    t.vehicle_id,
+    t.driver_id,
+    t.origin_facility_id,
+    t.destination_station_id,
+    t.departed_at,
+    v.plate_number,
+    u.full_name        AS driver_name,
+    u.telegram_user_id AS driver_telegram_id,
+    gs.name            AS destination_name
+FROM trips t
+JOIN refinery_facilities rf ON rf.id = t.origin_facility_id
+JOIN vehicles             v  ON v.id  = t.vehicle_id
+JOIN drivers              d  ON d.id  = t.driver_id
+JOIN users                u  ON u.id  = d.user_id
+LEFT JOIN gas_stations    gs ON gs.id = t.destination_station_id
+WHERE t.status IN ('LOADING','LOADED','IN_TRANSIT','ARRIVED','UNLOADING')
+  AND rf.refinery_id = $1
+ORDER BY t.departed_at ASC NULLS LAST;
+
+-- name: ListActiveTripsByStationScope :many
+SELECT
+    t.id,
+    t.status,
+    t.vehicle_id,
+    t.driver_id,
+    t.origin_facility_id,
+    t.destination_station_id,
+    t.departed_at,
+    v.plate_number,
+    u.full_name        AS driver_name,
+    u.telegram_user_id AS driver_telegram_id,
+    gs.name            AS destination_name
+FROM trips t
+JOIN vehicles          v  ON v.id  = t.vehicle_id
+JOIN drivers           d  ON d.id  = t.driver_id
+JOIN users             u  ON u.id  = d.user_id
+LEFT JOIN gas_stations gs ON gs.id = t.destination_station_id
+WHERE t.status IN ('LOADING','LOADED','IN_TRANSIT','ARRIVED','UNLOADING')
+  AND t.destination_station_id = $1
+ORDER BY t.departed_at ASC NULLS LAST;
+
+-- name: ListActiveTripsByDriverUserScope :many
+SELECT
+    t.id,
+    t.status,
+    t.vehicle_id,
+    t.driver_id,
+    t.origin_facility_id,
+    t.destination_station_id,
+    t.departed_at,
+    v.plate_number,
+    u.full_name        AS driver_name,
+    u.telegram_user_id AS driver_telegram_id,
+    gs.name            AS destination_name
+FROM trips t
+JOIN vehicles          v  ON v.id  = t.vehicle_id
+JOIN drivers           d  ON d.id  = t.driver_id
+JOIN users             u  ON u.id  = d.user_id
+LEFT JOIN gas_stations gs ON gs.id = t.destination_station_id
+WHERE t.status IN ('LOADING','LOADED','IN_TRANSIT','ARRIVED','UNLOADING')
+  AND u.id = $1
+ORDER BY t.departed_at ASC NULLS LAST;
+
 -- name: ListActiveTripsByFacility :many
 SELECT t.*
 FROM trips t

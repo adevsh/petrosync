@@ -62,3 +62,11 @@ func (h *Hub) Broadcast(msg interface{}) {
 		_ = conn.WriteMessage(websocket.TextMessage, data)
 	}
 }
+
+func (h *Hub) BroadcastText(msg string) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for conn := range h.clients {
+		_ = conn.WriteMessage(websocket.TextMessage, []byte(msg))
+	}
+}

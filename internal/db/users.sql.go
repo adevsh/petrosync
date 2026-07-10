@@ -340,6 +340,53 @@ func (q *Queries) SetForcePasswordChange(ctx context.Context, id int64) error {
 	return err
 }
 
+const setUserActive = `-- name: SetUserActive :one
+UPDATE users
+SET
+    active     = $2,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, username, full_name, telegram_user_id,
+          telegram_linked_at, force_password_change, active,
+          last_login_at, created_at, updated_at
+`
+
+type SetUserActiveParams struct {
+	ID     int64 `json:"id"`
+	Active bool  `json:"active"`
+}
+
+type SetUserActiveRow struct {
+	ID                  int64              `json:"id"`
+	Username            string             `json:"username"`
+	FullName            string             `json:"full_name"`
+	TelegramUserID      pgtype.Int8        `json:"telegram_user_id"`
+	TelegramLinkedAt    pgtype.Timestamptz `json:"telegram_linked_at"`
+	ForcePasswordChange bool               `json:"force_password_change"`
+	Active              bool               `json:"active"`
+	LastLoginAt         pgtype.Timestamptz `json:"last_login_at"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) SetUserActive(ctx context.Context, arg SetUserActiveParams) (SetUserActiveRow, error) {
+	row := q.db.QueryRow(ctx, setUserActive, arg.ID, arg.Active)
+	var i SetUserActiveRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.FullName,
+		&i.TelegramUserID,
+		&i.TelegramLinkedAt,
+		&i.ForcePasswordChange,
+		&i.Active,
+		&i.LastLoginAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const unlinkTelegramAccount = `-- name: UnlinkTelegramAccount :exec
 UPDATE users
 SET
@@ -352,6 +399,55 @@ WHERE id = $1
 func (q *Queries) UnlinkTelegramAccount(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, unlinkTelegramAccount, id)
 	return err
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users
+SET
+    username   = $2,
+    full_name  = $3,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, username, full_name, telegram_user_id,
+          telegram_linked_at, force_password_change, active,
+          last_login_at, created_at, updated_at
+`
+
+type UpdateUserParams struct {
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+	FullName string `json:"full_name"`
+}
+
+type UpdateUserRow struct {
+	ID                  int64              `json:"id"`
+	Username            string             `json:"username"`
+	FullName            string             `json:"full_name"`
+	TelegramUserID      pgtype.Int8        `json:"telegram_user_id"`
+	TelegramLinkedAt    pgtype.Timestamptz `json:"telegram_linked_at"`
+	ForcePasswordChange bool               `json:"force_password_change"`
+	Active              bool               `json:"active"`
+	LastLoginAt         pgtype.Timestamptz `json:"last_login_at"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
+	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Username, arg.FullName)
+	var i UpdateUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.FullName,
+		&i.TelegramUserID,
+		&i.TelegramLinkedAt,
+		&i.ForcePasswordChange,
+		&i.Active,
+		&i.LastLoginAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const updateUserPassword = `-- name: UpdateUserPassword :exec

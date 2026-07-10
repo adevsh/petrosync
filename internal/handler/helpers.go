@@ -3,6 +3,7 @@ package handler
 import (
 	"math/big"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -11,11 +12,32 @@ import (
 // Used for dip readings and other decimal values in handler input.
 func floatToNumeric(f float64) pgtype.Numeric {
 	s := strconv.FormatFloat(f, 'f', -1, 64)
-	n := new(big.Rat)
-	n.SetString(s)
+	neg := strings.HasPrefix(s, "-")
+	if neg {
+		s = strings.TrimPrefix(s, "-")
+	}
+
+	parts := strings.SplitN(s, ".", 2)
+	intPart := parts[0]
+	fracPart := ""
+	if len(parts) == 2 {
+		fracPart = parts[1]
+	}
+
+	intStr := intPart + fracPart
+	if intStr == "" {
+		intStr = "0"
+	}
+
+	i := new(big.Int)
+	i.SetString(intStr, 10)
+	if neg {
+		i.Neg(i)
+	}
+
 	return pgtype.Numeric{
-		Int:   n.Num(),
-		Exp:   -int32(len(n.Denom().Text(10)) - 1),
+		Int:   i,
+		Exp:   -int32(len(fracPart)),
 		Valid: true,
 	}
 }

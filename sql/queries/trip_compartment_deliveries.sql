@@ -86,3 +86,21 @@ SELECT
 FROM trip_compartment_deliveries
 WHERE trip_id = $1
 GROUP BY trip_id;
+
+-- name: ListTripLoadedVolumeByFuel :many
+SELECT
+    fuel_type_code,
+    SUM(loaded_volume_l)::NUMERIC AS total_loaded_l
+FROM trip_compartment_deliveries
+WHERE trip_id = $1
+GROUP BY fuel_type_code
+ORDER BY fuel_type_code;
+
+-- name: ListTripDeliveredVolumeByFuel :many
+SELECT
+    fuel_type_code,
+    SUM(delivered_volume_l)::NUMERIC AS total_delivered_l
+FROM trip_compartment_deliveries
+WHERE trip_id = $1
+GROUP BY fuel_type_code
+ORDER BY fuel_type_code;

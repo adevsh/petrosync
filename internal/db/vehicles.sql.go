@@ -454,6 +454,258 @@ func (q *Queries) ListVehiclesByStatus(ctx context.Context, status VehicleStatus
 	return items, nil
 }
 
+const listVehiclesByStatusAndDepot = `-- name: ListVehiclesByStatusAndDepot :many
+SELECT
+    v.id, v.plate_number, v.chassis_number, v.model, v.manufacture_year, v.total_capacity_l, v.tare_weight_kg, v.current_depot_id, v.current_location, v.status, v.keur_number, v.keur_expiry, v.last_inspection_date, v.next_inspection_due, v.last_assigned_at, v.notes, v.active, v.created_at, v.updated_at,
+    ST_X(v.current_location) AS current_longitude,
+    ST_Y(v.current_location) AS current_latitude
+FROM vehicles v
+WHERE v.status = $1
+  AND v.current_depot_id = $2
+  AND v.active = TRUE
+ORDER BY v.plate_number
+`
+
+type ListVehiclesByStatusAndDepotParams struct {
+	Status         VehicleStatusT `json:"status"`
+	CurrentDepotID pgtype.Int8    `json:"current_depot_id"`
+}
+
+type ListVehiclesByStatusAndDepotRow struct {
+	ID                 int64              `json:"id"`
+	PlateNumber        string             `json:"plate_number"`
+	ChassisNumber      string             `json:"chassis_number"`
+	Model              pgtype.Text        `json:"model"`
+	ManufactureYear    pgtype.Int2        `json:"manufacture_year"`
+	TotalCapacityL     pgtype.Numeric     `json:"total_capacity_l"`
+	TareWeightKg       pgtype.Numeric     `json:"tare_weight_kg"`
+	CurrentDepotID     pgtype.Int8        `json:"current_depot_id"`
+	CurrentLocation    interface{}        `json:"current_location"`
+	Status             VehicleStatusT     `json:"status"`
+	KeurNumber         pgtype.Text        `json:"keur_number"`
+	KeurExpiry         pgtype.Date        `json:"keur_expiry"`
+	LastInspectionDate pgtype.Date        `json:"last_inspection_date"`
+	NextInspectionDue  pgtype.Date        `json:"next_inspection_due"`
+	LastAssignedAt     pgtype.Timestamptz `json:"last_assigned_at"`
+	Notes              pgtype.Text        `json:"notes"`
+	Active             bool               `json:"active"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	CurrentLongitude   interface{}        `json:"current_longitude"`
+	CurrentLatitude    interface{}        `json:"current_latitude"`
+}
+
+func (q *Queries) ListVehiclesByStatusAndDepot(ctx context.Context, arg ListVehiclesByStatusAndDepotParams) ([]ListVehiclesByStatusAndDepotRow, error) {
+	rows, err := q.db.Query(ctx, listVehiclesByStatusAndDepot, arg.Status, arg.CurrentDepotID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListVehiclesByStatusAndDepotRow{}
+	for rows.Next() {
+		var i ListVehiclesByStatusAndDepotRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PlateNumber,
+			&i.ChassisNumber,
+			&i.Model,
+			&i.ManufactureYear,
+			&i.TotalCapacityL,
+			&i.TareWeightKg,
+			&i.CurrentDepotID,
+			&i.CurrentLocation,
+			&i.Status,
+			&i.KeurNumber,
+			&i.KeurExpiry,
+			&i.LastInspectionDate,
+			&i.NextInspectionDue,
+			&i.LastAssignedAt,
+			&i.Notes,
+			&i.Active,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CurrentLongitude,
+			&i.CurrentLatitude,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listVehiclesByStatusAndFacility = `-- name: ListVehiclesByStatusAndFacility :many
+SELECT
+    v.id, v.plate_number, v.chassis_number, v.model, v.manufacture_year, v.total_capacity_l, v.tare_weight_kg, v.current_depot_id, v.current_location, v.status, v.keur_number, v.keur_expiry, v.last_inspection_date, v.next_inspection_due, v.last_assigned_at, v.notes, v.active, v.created_at, v.updated_at,
+    ST_X(v.current_location) AS current_longitude,
+    ST_Y(v.current_location) AS current_latitude
+FROM vehicles v
+JOIN vehicle_depots d ON d.id = v.current_depot_id
+WHERE v.status = $1
+  AND d.primary_facility_id = $2
+  AND v.active = TRUE
+ORDER BY v.plate_number
+`
+
+type ListVehiclesByStatusAndFacilityParams struct {
+	Status            VehicleStatusT `json:"status"`
+	PrimaryFacilityID int64          `json:"primary_facility_id"`
+}
+
+type ListVehiclesByStatusAndFacilityRow struct {
+	ID                 int64              `json:"id"`
+	PlateNumber        string             `json:"plate_number"`
+	ChassisNumber      string             `json:"chassis_number"`
+	Model              pgtype.Text        `json:"model"`
+	ManufactureYear    pgtype.Int2        `json:"manufacture_year"`
+	TotalCapacityL     pgtype.Numeric     `json:"total_capacity_l"`
+	TareWeightKg       pgtype.Numeric     `json:"tare_weight_kg"`
+	CurrentDepotID     pgtype.Int8        `json:"current_depot_id"`
+	CurrentLocation    interface{}        `json:"current_location"`
+	Status             VehicleStatusT     `json:"status"`
+	KeurNumber         pgtype.Text        `json:"keur_number"`
+	KeurExpiry         pgtype.Date        `json:"keur_expiry"`
+	LastInspectionDate pgtype.Date        `json:"last_inspection_date"`
+	NextInspectionDue  pgtype.Date        `json:"next_inspection_due"`
+	LastAssignedAt     pgtype.Timestamptz `json:"last_assigned_at"`
+	Notes              pgtype.Text        `json:"notes"`
+	Active             bool               `json:"active"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	CurrentLongitude   interface{}        `json:"current_longitude"`
+	CurrentLatitude    interface{}        `json:"current_latitude"`
+}
+
+func (q *Queries) ListVehiclesByStatusAndFacility(ctx context.Context, arg ListVehiclesByStatusAndFacilityParams) ([]ListVehiclesByStatusAndFacilityRow, error) {
+	rows, err := q.db.Query(ctx, listVehiclesByStatusAndFacility, arg.Status, arg.PrimaryFacilityID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListVehiclesByStatusAndFacilityRow{}
+	for rows.Next() {
+		var i ListVehiclesByStatusAndFacilityRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PlateNumber,
+			&i.ChassisNumber,
+			&i.Model,
+			&i.ManufactureYear,
+			&i.TotalCapacityL,
+			&i.TareWeightKg,
+			&i.CurrentDepotID,
+			&i.CurrentLocation,
+			&i.Status,
+			&i.KeurNumber,
+			&i.KeurExpiry,
+			&i.LastInspectionDate,
+			&i.NextInspectionDue,
+			&i.LastAssignedAt,
+			&i.Notes,
+			&i.Active,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CurrentLongitude,
+			&i.CurrentLatitude,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listVehiclesByStatusAndRefinery = `-- name: ListVehiclesByStatusAndRefinery :many
+SELECT
+    v.id, v.plate_number, v.chassis_number, v.model, v.manufacture_year, v.total_capacity_l, v.tare_weight_kg, v.current_depot_id, v.current_location, v.status, v.keur_number, v.keur_expiry, v.last_inspection_date, v.next_inspection_due, v.last_assigned_at, v.notes, v.active, v.created_at, v.updated_at,
+    ST_X(v.current_location) AS current_longitude,
+    ST_Y(v.current_location) AS current_latitude
+FROM vehicles v
+JOIN vehicle_depots d ON d.id = v.current_depot_id
+JOIN refinery_facilities rf ON rf.id = d.primary_facility_id
+WHERE v.status = $1
+  AND rf.refinery_id = $2
+  AND v.active = TRUE
+ORDER BY v.plate_number
+`
+
+type ListVehiclesByStatusAndRefineryParams struct {
+	Status     VehicleStatusT `json:"status"`
+	RefineryID int64          `json:"refinery_id"`
+}
+
+type ListVehiclesByStatusAndRefineryRow struct {
+	ID                 int64              `json:"id"`
+	PlateNumber        string             `json:"plate_number"`
+	ChassisNumber      string             `json:"chassis_number"`
+	Model              pgtype.Text        `json:"model"`
+	ManufactureYear    pgtype.Int2        `json:"manufacture_year"`
+	TotalCapacityL     pgtype.Numeric     `json:"total_capacity_l"`
+	TareWeightKg       pgtype.Numeric     `json:"tare_weight_kg"`
+	CurrentDepotID     pgtype.Int8        `json:"current_depot_id"`
+	CurrentLocation    interface{}        `json:"current_location"`
+	Status             VehicleStatusT     `json:"status"`
+	KeurNumber         pgtype.Text        `json:"keur_number"`
+	KeurExpiry         pgtype.Date        `json:"keur_expiry"`
+	LastInspectionDate pgtype.Date        `json:"last_inspection_date"`
+	NextInspectionDue  pgtype.Date        `json:"next_inspection_due"`
+	LastAssignedAt     pgtype.Timestamptz `json:"last_assigned_at"`
+	Notes              pgtype.Text        `json:"notes"`
+	Active             bool               `json:"active"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	CurrentLongitude   interface{}        `json:"current_longitude"`
+	CurrentLatitude    interface{}        `json:"current_latitude"`
+}
+
+func (q *Queries) ListVehiclesByStatusAndRefinery(ctx context.Context, arg ListVehiclesByStatusAndRefineryParams) ([]ListVehiclesByStatusAndRefineryRow, error) {
+	rows, err := q.db.Query(ctx, listVehiclesByStatusAndRefinery, arg.Status, arg.RefineryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListVehiclesByStatusAndRefineryRow{}
+	for rows.Next() {
+		var i ListVehiclesByStatusAndRefineryRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PlateNumber,
+			&i.ChassisNumber,
+			&i.Model,
+			&i.ManufactureYear,
+			&i.TotalCapacityL,
+			&i.TareWeightKg,
+			&i.CurrentDepotID,
+			&i.CurrentLocation,
+			&i.Status,
+			&i.KeurNumber,
+			&i.KeurExpiry,
+			&i.LastInspectionDate,
+			&i.NextInspectionDue,
+			&i.LastAssignedAt,
+			&i.Notes,
+			&i.Active,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CurrentLongitude,
+			&i.CurrentLatitude,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVehiclesWithExpiringKeur = `-- name: ListVehiclesWithExpiringKeur :many
 SELECT
     v.id, v.plate_number, v.chassis_number, v.model, v.manufacture_year, v.total_capacity_l, v.tare_weight_kg, v.current_depot_id, v.current_location, v.status, v.keur_number, v.keur_expiry, v.last_inspection_date, v.next_inspection_due, v.last_assigned_at, v.notes, v.active, v.created_at, v.updated_at,

@@ -34,9 +34,9 @@ const insertNotification = `-- name: InsertNotification :one
 
 INSERT INTO notification_log (
     trip_id, do_id, recipient_telegram_id, recipient_user_id,
-    notification_type, message_text, delivery_status, telegram_message_id
+    notification_type, message_text, delivery_status, telegram_message_id, error_message
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
 RETURNING id, trip_id, do_id, recipient_telegram_id, recipient_user_id, notification_type, message_text, sent_at, delivery_status, telegram_message_id, error_message
 `
@@ -50,6 +50,7 @@ type InsertNotificationParams struct {
 	MessageText         string            `json:"message_text"`
 	DeliveryStatus      string            `json:"delivery_status"`
 	TelegramMessageID   pgtype.Int8       `json:"telegram_message_id"`
+	ErrorMessage        pgtype.Text       `json:"error_message"`
 }
 
 // =============================================================================
@@ -65,6 +66,7 @@ func (q *Queries) InsertNotification(ctx context.Context, arg InsertNotification
 		arg.MessageText,
 		arg.DeliveryStatus,
 		arg.TelegramMessageID,
+		arg.ErrorMessage,
 	)
 	var i NotificationLog
 	err := row.Scan(

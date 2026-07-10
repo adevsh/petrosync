@@ -308,6 +308,78 @@ func (q *Queries) ListEscalatedApprovals(ctx context.Context) ([]ListEscalatedAp
 	return items, nil
 }
 
+const listOverduePendingManualApprovals = `-- name: ListOverduePendingManualApprovals :many
+SELECT
+    wbr.id, wbr.trip_id, wbr.vehicle_id, wbr.reading_type, wbr.weight_kg, wbr.method, wbr.ambient_temp_celsius, wbr.recorded_by, wbr.approval_status, wbr.approved_by, wbr.approved_at, wbr.escalated_at, wbr.escalated_to, wbr.notes, wbr.created_at,
+    v.plate_number,
+    u.full_name AS recorded_by_name
+FROM weight_bridge_readings wbr
+JOIN vehicles v ON v.id = wbr.vehicle_id
+JOIN users    u ON u.id = wbr.recorded_by
+WHERE wbr.method          = 'MANUAL_APPROVED'
+  AND wbr.approval_status = 'PENDING'
+  AND wbr.created_at < NOW() - make_interval(hours => $1)
+ORDER BY wbr.created_at ASC
+`
+
+type ListOverduePendingManualApprovalsRow struct {
+	ID                 int64              `json:"id"`
+	TripID             pgtype.Int8        `json:"trip_id"`
+	VehicleID          int64              `json:"vehicle_id"`
+	ReadingType        string             `json:"reading_type"`
+	WeightKg           pgtype.Numeric     `json:"weight_kg"`
+	Method             MeasurementMethodT `json:"method"`
+	AmbientTempCelsius pgtype.Numeric     `json:"ambient_temp_celsius"`
+	RecordedBy         int64              `json:"recorded_by"`
+	ApprovalStatus     ApprovalStatusT    `json:"approval_status"`
+	ApprovedBy         pgtype.Int8        `json:"approved_by"`
+	ApprovedAt         pgtype.Timestamptz `json:"approved_at"`
+	EscalatedAt        pgtype.Timestamptz `json:"escalated_at"`
+	EscalatedTo        pgtype.Int8        `json:"escalated_to"`
+	Notes              pgtype.Text        `json:"notes"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	PlateNumber        string             `json:"plate_number"`
+	RecordedByName     string             `json:"recorded_by_name"`
+}
+
+func (q *Queries) ListOverduePendingManualApprovals(ctx context.Context, hours int32) ([]ListOverduePendingManualApprovalsRow, error) {
+	rows, err := q.db.Query(ctx, listOverduePendingManualApprovals, hours)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOverduePendingManualApprovalsRow{}
+	for rows.Next() {
+		var i ListOverduePendingManualApprovalsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TripID,
+			&i.VehicleID,
+			&i.ReadingType,
+			&i.WeightKg,
+			&i.Method,
+			&i.AmbientTempCelsius,
+			&i.RecordedBy,
+			&i.ApprovalStatus,
+			&i.ApprovedBy,
+			&i.ApprovedAt,
+			&i.EscalatedAt,
+			&i.EscalatedTo,
+			&i.Notes,
+			&i.CreatedAt,
+			&i.PlateNumber,
+			&i.RecordedByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPendingManualApprovals = `-- name: ListPendingManualApprovals :many
 SELECT
     wbr.id, wbr.trip_id, wbr.vehicle_id, wbr.reading_type, wbr.weight_kg, wbr.method, wbr.ambient_temp_celsius, wbr.recorded_by, wbr.approval_status, wbr.approved_by, wbr.approved_at, wbr.escalated_at, wbr.escalated_to, wbr.notes, wbr.created_at,

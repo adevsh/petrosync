@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/adevsh/petrosync/internal/db"
+	"github.com/adevsh/petrosync/internal/middleware"
 )
 
 // DriverHandler handles driver endpoints.
@@ -54,23 +55,42 @@ func (h *DriverHandler) CreateDriver(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
+	middleware.SetAuditAction(c, "DRIVER_CREATE")
+	middleware.SetAuditEntity(c, "drivers", d.ID)
+	middleware.SetAuditAfter(c, d)
 	c.JSON(http.StatusCreated, gin.H{"data": d})
 }
 
 func (h *DriverHandler) StartShift(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	if before, err := h.querier.GetDriver(c.Request.Context(), id); err == nil {
+		middleware.SetAuditBefore(c, before)
+	}
 	if err := h.querier.StartDriverShift(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
+	if after, err := h.querier.GetDriver(c.Request.Context(), id); err == nil {
+		middleware.SetAuditAfter(c, after)
+	}
+	middleware.SetAuditAction(c, "DRIVER_SHIFT_START")
+	middleware.SetAuditEntity(c, "drivers", id)
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"message": "shift started"}})
 }
 
 func (h *DriverHandler) EndShift(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	if before, err := h.querier.GetDriver(c.Request.Context(), id); err == nil {
+		middleware.SetAuditBefore(c, before)
+	}
 	if err := h.querier.EndDriverShift(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
+	if after, err := h.querier.GetDriver(c.Request.Context(), id); err == nil {
+		middleware.SetAuditAfter(c, after)
+	}
+	middleware.SetAuditAction(c, "DRIVER_SHIFT_END")
+	middleware.SetAuditEntity(c, "drivers", id)
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"message": "shift ended"}})
 }

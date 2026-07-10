@@ -186,6 +186,60 @@ func (q *Queries) GrantRole(ctx context.Context, arg GrantRoleParams) (UserRoleG
 	return i, err
 }
 
+const listUsersWithCompanyRole = `-- name: ListUsersWithCompanyRole :many
+SELECT
+    u.id,
+    u.username,
+    u.full_name,
+    u.telegram_user_id,
+    u.active,
+    urg.granted_at
+FROM user_role_grants urg
+JOIN users u ON u.id = urg.user_id
+WHERE urg.role       = $1
+  AND urg.scope_type = 'COMPANY'
+  AND urg.scope_id IS NULL
+  AND urg.revoked_at IS NULL
+  AND u.active       = TRUE
+ORDER BY u.full_name
+`
+
+type ListUsersWithCompanyRoleRow struct {
+	ID             int64              `json:"id"`
+	Username       string             `json:"username"`
+	FullName       string             `json:"full_name"`
+	TelegramUserID pgtype.Int8        `json:"telegram_user_id"`
+	Active         bool               `json:"active"`
+	GrantedAt      pgtype.Timestamptz `json:"granted_at"`
+}
+
+func (q *Queries) ListUsersWithCompanyRole(ctx context.Context, role UserRoleT) ([]ListUsersWithCompanyRoleRow, error) {
+	rows, err := q.db.Query(ctx, listUsersWithCompanyRole, role)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUsersWithCompanyRoleRow{}
+	for rows.Next() {
+		var i ListUsersWithCompanyRoleRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.FullName,
+			&i.TelegramUserID,
+			&i.Active,
+			&i.GrantedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUsersWithRoleInScope = `-- name: ListUsersWithRoleInScope :many
 SELECT
     u.id,

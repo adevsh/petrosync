@@ -304,6 +304,76 @@ func (q *Queries) ListDisputedDeliveries(ctx context.Context) ([]ListDisputedDel
 	return items, nil
 }
 
+const listTripDeliveredVolumeByFuel = `-- name: ListTripDeliveredVolumeByFuel :many
+SELECT
+    fuel_type_code,
+    SUM(delivered_volume_l)::NUMERIC AS total_delivered_l
+FROM trip_compartment_deliveries
+WHERE trip_id = $1
+GROUP BY fuel_type_code
+ORDER BY fuel_type_code
+`
+
+type ListTripDeliveredVolumeByFuelRow struct {
+	FuelTypeCode    string         `json:"fuel_type_code"`
+	TotalDeliveredL pgtype.Numeric `json:"total_delivered_l"`
+}
+
+func (q *Queries) ListTripDeliveredVolumeByFuel(ctx context.Context, tripID int64) ([]ListTripDeliveredVolumeByFuelRow, error) {
+	rows, err := q.db.Query(ctx, listTripDeliveredVolumeByFuel, tripID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListTripDeliveredVolumeByFuelRow{}
+	for rows.Next() {
+		var i ListTripDeliveredVolumeByFuelRow
+		if err := rows.Scan(&i.FuelTypeCode, &i.TotalDeliveredL); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTripLoadedVolumeByFuel = `-- name: ListTripLoadedVolumeByFuel :many
+SELECT
+    fuel_type_code,
+    SUM(loaded_volume_l)::NUMERIC AS total_loaded_l
+FROM trip_compartment_deliveries
+WHERE trip_id = $1
+GROUP BY fuel_type_code
+ORDER BY fuel_type_code
+`
+
+type ListTripLoadedVolumeByFuelRow struct {
+	FuelTypeCode string         `json:"fuel_type_code"`
+	TotalLoadedL pgtype.Numeric `json:"total_loaded_l"`
+}
+
+func (q *Queries) ListTripLoadedVolumeByFuel(ctx context.Context, tripID int64) ([]ListTripLoadedVolumeByFuelRow, error) {
+	rows, err := q.db.Query(ctx, listTripLoadedVolumeByFuel, tripID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListTripLoadedVolumeByFuelRow{}
+	for rows.Next() {
+		var i ListTripLoadedVolumeByFuelRow
+		if err := rows.Scan(&i.FuelTypeCode, &i.TotalLoadedL); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateCompartmentDeliveryStatus = `-- name: UpdateCompartmentDeliveryStatus :one
 UPDATE trip_compartment_deliveries
 SET delivery_status = $2, updated_at = NOW()

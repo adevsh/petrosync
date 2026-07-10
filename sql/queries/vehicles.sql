@@ -39,6 +39,42 @@ WHERE v.status = $1
   AND v.active = TRUE
 ORDER BY v.plate_number;
 
+-- name: ListVehiclesByStatusAndDepot :many
+SELECT
+    v.*,
+    ST_X(v.current_location) AS current_longitude,
+    ST_Y(v.current_location) AS current_latitude
+FROM vehicles v
+WHERE v.status = $1
+  AND v.current_depot_id = $2
+  AND v.active = TRUE
+ORDER BY v.plate_number;
+
+-- name: ListVehiclesByStatusAndFacility :many
+SELECT
+    v.*,
+    ST_X(v.current_location) AS current_longitude,
+    ST_Y(v.current_location) AS current_latitude
+FROM vehicles v
+JOIN vehicle_depots d ON d.id = v.current_depot_id
+WHERE v.status = $1
+  AND d.primary_facility_id = $2
+  AND v.active = TRUE
+ORDER BY v.plate_number;
+
+-- name: ListVehiclesByStatusAndRefinery :many
+SELECT
+    v.*,
+    ST_X(v.current_location) AS current_longitude,
+    ST_Y(v.current_location) AS current_latitude
+FROM vehicles v
+JOIN vehicle_depots d ON d.id = v.current_depot_id
+JOIN refinery_facilities rf ON rf.id = d.primary_facility_id
+WHERE v.status = $1
+  AND rf.refinery_id = $2
+  AND v.active = TRUE
+ORDER BY v.plate_number;
+
 -- Primary dispatch query. Finds available trucks near a facility ordered by:
 -- 1. Depot proximity to origin facility (home depot first)
 -- 2. Distance from current GPS location to facility

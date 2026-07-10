@@ -345,6 +345,75 @@ func (q *Queries) ListActiveTrips(ctx context.Context) ([]ListActiveTripsRow, er
 	return items, nil
 }
 
+const listActiveTripsByDriverUserScope = `-- name: ListActiveTripsByDriverUserScope :many
+SELECT
+    t.id,
+    t.status,
+    t.vehicle_id,
+    t.driver_id,
+    t.origin_facility_id,
+    t.destination_station_id,
+    t.departed_at,
+    v.plate_number,
+    u.full_name        AS driver_name,
+    u.telegram_user_id AS driver_telegram_id,
+    gs.name            AS destination_name
+FROM trips t
+JOIN vehicles          v  ON v.id  = t.vehicle_id
+JOIN drivers           d  ON d.id  = t.driver_id
+JOIN users             u  ON u.id  = d.user_id
+LEFT JOIN gas_stations gs ON gs.id = t.destination_station_id
+WHERE t.status IN ('LOADING','LOADED','IN_TRANSIT','ARRIVED','UNLOADING')
+  AND u.id = $1
+ORDER BY t.departed_at ASC NULLS LAST
+`
+
+type ListActiveTripsByDriverUserScopeRow struct {
+	ID                   int64              `json:"id"`
+	Status               TripStatusT        `json:"status"`
+	VehicleID            int64              `json:"vehicle_id"`
+	DriverID             int64              `json:"driver_id"`
+	OriginFacilityID     int64              `json:"origin_facility_id"`
+	DestinationStationID pgtype.Int8        `json:"destination_station_id"`
+	DepartedAt           pgtype.Timestamptz `json:"departed_at"`
+	PlateNumber          string             `json:"plate_number"`
+	DriverName           string             `json:"driver_name"`
+	DriverTelegramID     pgtype.Int8        `json:"driver_telegram_id"`
+	DestinationName      pgtype.Text        `json:"destination_name"`
+}
+
+func (q *Queries) ListActiveTripsByDriverUserScope(ctx context.Context, id int64) ([]ListActiveTripsByDriverUserScopeRow, error) {
+	rows, err := q.db.Query(ctx, listActiveTripsByDriverUserScope, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveTripsByDriverUserScopeRow{}
+	for rows.Next() {
+		var i ListActiveTripsByDriverUserScopeRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Status,
+			&i.VehicleID,
+			&i.DriverID,
+			&i.OriginFacilityID,
+			&i.DestinationStationID,
+			&i.DepartedAt,
+			&i.PlateNumber,
+			&i.DriverName,
+			&i.DriverTelegramID,
+			&i.DestinationName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listActiveTripsByFacility = `-- name: ListActiveTripsByFacility :many
 SELECT t.id, t.do_id, t.vehicle_id, t.driver_id, t.status, t.destination_type, t.origin_facility_id, t.destination_station_id, t.destination_facility_id, t.route_polyline, t.departed_at, t.arrived_at, t.completed_at, t.parent_trip_id, t.created_at, t.updated_at
 FROM trips t
@@ -379,6 +448,214 @@ func (q *Queries) ListActiveTripsByFacility(ctx context.Context, originFacilityI
 			&i.ParentTripID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveTripsByFacilityScope = `-- name: ListActiveTripsByFacilityScope :many
+SELECT
+    t.id,
+    t.status,
+    t.vehicle_id,
+    t.driver_id,
+    t.origin_facility_id,
+    t.destination_station_id,
+    t.departed_at,
+    v.plate_number,
+    u.full_name        AS driver_name,
+    u.telegram_user_id AS driver_telegram_id,
+    gs.name            AS destination_name
+FROM trips t
+JOIN vehicles          v  ON v.id  = t.vehicle_id
+JOIN drivers           d  ON d.id  = t.driver_id
+JOIN users             u  ON u.id  = d.user_id
+LEFT JOIN gas_stations gs ON gs.id = t.destination_station_id
+WHERE t.status IN ('LOADING','LOADED','IN_TRANSIT','ARRIVED','UNLOADING')
+  AND t.origin_facility_id = $1
+ORDER BY t.departed_at ASC NULLS LAST
+`
+
+type ListActiveTripsByFacilityScopeRow struct {
+	ID                   int64              `json:"id"`
+	Status               TripStatusT        `json:"status"`
+	VehicleID            int64              `json:"vehicle_id"`
+	DriverID             int64              `json:"driver_id"`
+	OriginFacilityID     int64              `json:"origin_facility_id"`
+	DestinationStationID pgtype.Int8        `json:"destination_station_id"`
+	DepartedAt           pgtype.Timestamptz `json:"departed_at"`
+	PlateNumber          string             `json:"plate_number"`
+	DriverName           string             `json:"driver_name"`
+	DriverTelegramID     pgtype.Int8        `json:"driver_telegram_id"`
+	DestinationName      pgtype.Text        `json:"destination_name"`
+}
+
+func (q *Queries) ListActiveTripsByFacilityScope(ctx context.Context, originFacilityID int64) ([]ListActiveTripsByFacilityScopeRow, error) {
+	rows, err := q.db.Query(ctx, listActiveTripsByFacilityScope, originFacilityID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveTripsByFacilityScopeRow{}
+	for rows.Next() {
+		var i ListActiveTripsByFacilityScopeRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Status,
+			&i.VehicleID,
+			&i.DriverID,
+			&i.OriginFacilityID,
+			&i.DestinationStationID,
+			&i.DepartedAt,
+			&i.PlateNumber,
+			&i.DriverName,
+			&i.DriverTelegramID,
+			&i.DestinationName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveTripsByRefineryScope = `-- name: ListActiveTripsByRefineryScope :many
+SELECT
+    t.id,
+    t.status,
+    t.vehicle_id,
+    t.driver_id,
+    t.origin_facility_id,
+    t.destination_station_id,
+    t.departed_at,
+    v.plate_number,
+    u.full_name        AS driver_name,
+    u.telegram_user_id AS driver_telegram_id,
+    gs.name            AS destination_name
+FROM trips t
+JOIN refinery_facilities rf ON rf.id = t.origin_facility_id
+JOIN vehicles             v  ON v.id  = t.vehicle_id
+JOIN drivers              d  ON d.id  = t.driver_id
+JOIN users                u  ON u.id  = d.user_id
+LEFT JOIN gas_stations    gs ON gs.id = t.destination_station_id
+WHERE t.status IN ('LOADING','LOADED','IN_TRANSIT','ARRIVED','UNLOADING')
+  AND rf.refinery_id = $1
+ORDER BY t.departed_at ASC NULLS LAST
+`
+
+type ListActiveTripsByRefineryScopeRow struct {
+	ID                   int64              `json:"id"`
+	Status               TripStatusT        `json:"status"`
+	VehicleID            int64              `json:"vehicle_id"`
+	DriverID             int64              `json:"driver_id"`
+	OriginFacilityID     int64              `json:"origin_facility_id"`
+	DestinationStationID pgtype.Int8        `json:"destination_station_id"`
+	DepartedAt           pgtype.Timestamptz `json:"departed_at"`
+	PlateNumber          string             `json:"plate_number"`
+	DriverName           string             `json:"driver_name"`
+	DriverTelegramID     pgtype.Int8        `json:"driver_telegram_id"`
+	DestinationName      pgtype.Text        `json:"destination_name"`
+}
+
+func (q *Queries) ListActiveTripsByRefineryScope(ctx context.Context, refineryID int64) ([]ListActiveTripsByRefineryScopeRow, error) {
+	rows, err := q.db.Query(ctx, listActiveTripsByRefineryScope, refineryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveTripsByRefineryScopeRow{}
+	for rows.Next() {
+		var i ListActiveTripsByRefineryScopeRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Status,
+			&i.VehicleID,
+			&i.DriverID,
+			&i.OriginFacilityID,
+			&i.DestinationStationID,
+			&i.DepartedAt,
+			&i.PlateNumber,
+			&i.DriverName,
+			&i.DriverTelegramID,
+			&i.DestinationName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveTripsByStationScope = `-- name: ListActiveTripsByStationScope :many
+SELECT
+    t.id,
+    t.status,
+    t.vehicle_id,
+    t.driver_id,
+    t.origin_facility_id,
+    t.destination_station_id,
+    t.departed_at,
+    v.plate_number,
+    u.full_name        AS driver_name,
+    u.telegram_user_id AS driver_telegram_id,
+    gs.name            AS destination_name
+FROM trips t
+JOIN vehicles          v  ON v.id  = t.vehicle_id
+JOIN drivers           d  ON d.id  = t.driver_id
+JOIN users             u  ON u.id  = d.user_id
+LEFT JOIN gas_stations gs ON gs.id = t.destination_station_id
+WHERE t.status IN ('LOADING','LOADED','IN_TRANSIT','ARRIVED','UNLOADING')
+  AND t.destination_station_id = $1
+ORDER BY t.departed_at ASC NULLS LAST
+`
+
+type ListActiveTripsByStationScopeRow struct {
+	ID                   int64              `json:"id"`
+	Status               TripStatusT        `json:"status"`
+	VehicleID            int64              `json:"vehicle_id"`
+	DriverID             int64              `json:"driver_id"`
+	OriginFacilityID     int64              `json:"origin_facility_id"`
+	DestinationStationID pgtype.Int8        `json:"destination_station_id"`
+	DepartedAt           pgtype.Timestamptz `json:"departed_at"`
+	PlateNumber          string             `json:"plate_number"`
+	DriverName           string             `json:"driver_name"`
+	DriverTelegramID     pgtype.Int8        `json:"driver_telegram_id"`
+	DestinationName      pgtype.Text        `json:"destination_name"`
+}
+
+func (q *Queries) ListActiveTripsByStationScope(ctx context.Context, destinationStationID pgtype.Int8) ([]ListActiveTripsByStationScopeRow, error) {
+	rows, err := q.db.Query(ctx, listActiveTripsByStationScope, destinationStationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveTripsByStationScopeRow{}
+	for rows.Next() {
+		var i ListActiveTripsByStationScopeRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Status,
+			&i.VehicleID,
+			&i.DriverID,
+			&i.OriginFacilityID,
+			&i.DestinationStationID,
+			&i.DepartedAt,
+			&i.PlateNumber,
+			&i.DriverName,
+			&i.DriverTelegramID,
+			&i.DestinationName,
 		); err != nil {
 			return nil, err
 		}

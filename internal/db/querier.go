@@ -264,13 +264,19 @@ type Querier interface {
 	ListActiveTokensForUser(ctx context.Context, userID int64) ([]TelegramLinkToken, error)
 	// All in-flight trips across all facilities (for dashboard map feed).
 	ListActiveTrips(ctx context.Context) ([]ListActiveTripsRow, error)
+	ListActiveTripsByDriverUserScope(ctx context.Context, id int64) ([]ListActiveTripsByDriverUserScopeRow, error)
 	ListActiveTripsByFacility(ctx context.Context, originFacilityID int64) ([]Trip, error)
+	ListActiveTripsByFacilityScope(ctx context.Context, originFacilityID int64) ([]ListActiveTripsByFacilityScopeRow, error)
+	ListActiveTripsByRefineryScope(ctx context.Context, refineryID int64) ([]ListActiveTripsByRefineryScopeRow, error)
+	ListActiveTripsByStationScope(ctx context.Context, destinationStationID pgtype.Int8) ([]ListActiveTripsByStationScopeRow, error)
 	// Real-time dashboard map: latest GPS position per active trip via LATERAL join.
 	ListActiveTripsWithLatestGPS(ctx context.Context) ([]ListActiveTripsWithLatestGPSRow, error)
 	ListActiveUsers(ctx context.Context) ([]ListActiveUsersRow, error)
 	ListAllActiveDepots(ctx context.Context) ([]ListAllActiveDepotsRow, error)
 	ListAllActiveFacilities(ctx context.Context) ([]ListAllActiveFacilitiesRow, error)
 	ListAllActiveStations(ctx context.Context) ([]ListAllActiveStationsRow, error)
+	ListAllActiveStationsByRefineryScope(ctx context.Context, refineryID int64) ([]ListAllActiveStationsByRefineryScopeRow, error)
+	ListAllActiveStationsByStationScope(ctx context.Context, id int64) ([]ListAllActiveStationsByStationScopeRow, error)
 	// Includes inactive compartments (admin view).
 	ListAllCompartmentsByVehicle(ctx context.Context, vehicleID int64) ([]VehicleCompartment, error)
 	ListAllOpenMaintenance(ctx context.Context) ([]ListAllOpenMaintenanceRow, error)
@@ -325,6 +331,7 @@ type Querier interface {
 	ListNotificationsByRecipient(ctx context.Context, arg ListNotificationsByRecipientParams) ([]NotificationLog, error)
 	ListNotificationsByTrip(ctx context.Context, tripID pgtype.Int8) ([]NotificationLog, error)
 	ListOpenMaintenanceByVehicle(ctx context.Context, vehicleID int64) ([]VehicleMaintenanceRecord, error)
+	ListOverduePendingManualApprovals(ctx context.Context, hours int32) ([]ListOverduePendingManualApprovalsRow, error)
 	// Facility manager approval queue. Scoped to a specific facility via vehicle's current depot.
 	ListPendingManualApprovals(ctx context.Context, primaryFacilityID int64) ([]ListPendingManualApprovalsRow, error)
 	// Combines both PENDING and ESCALATED readings needing action from this facility's managers.
@@ -348,17 +355,23 @@ type Querier interface {
 	// Returns all stations where the facility is in the supply whitelist.
 	ListStationsServedByFacility(ctx context.Context, facilityID int64) ([]ListStationsServedByFacilityRow, error)
 	ListStorageTanksByFacility(ctx context.Context, facilityID int64) ([]FacilityStorageTank, error)
+	ListTripDeliveredVolumeByFuel(ctx context.Context, tripID int64) ([]ListTripDeliveredVolumeByFuelRow, error)
 	ListTripEventsByTrip(ctx context.Context, tripID int64) ([]TripEvent, error)
 	ListTripEventsByTripAndType(ctx context.Context, arg ListTripEventsByTripAndTypeParams) ([]TripEvent, error)
+	ListTripLoadedVolumeByFuel(ctx context.Context, tripID int64) ([]ListTripLoadedVolumeByFuelRow, error)
 	ListTripsByDriver(ctx context.Context, arg ListTripsByDriverParams) ([]Trip, error)
 	ListTripsByStatus(ctx context.Context, status TripStatusT) ([]Trip, error)
 	ListTripsByVehicle(ctx context.Context, arg ListTripsByVehicleParams) ([]Trip, error)
 	// Background worker: fetch deviations that have exceeded alert threshold and not yet notified.
 	ListUnnotifiedDeviationsAboveThreshold(ctx context.Context, dollar_1 pgtype.Text) ([]ListUnnotifiedDeviationsAboveThresholdRow, error)
 	ListUsers(ctx context.Context) ([]ListUsersRow, error)
+	ListUsersWithCompanyRole(ctx context.Context, role UserRoleT) ([]ListUsersWithCompanyRoleRow, error)
 	ListUsersWithRoleInScope(ctx context.Context, arg ListUsersWithRoleInScopeParams) ([]ListUsersWithRoleInScopeRow, error)
 	ListVehiclesByDepot(ctx context.Context, currentDepotID pgtype.Int8) ([]ListVehiclesByDepotRow, error)
 	ListVehiclesByStatus(ctx context.Context, status VehicleStatusT) ([]ListVehiclesByStatusRow, error)
+	ListVehiclesByStatusAndDepot(ctx context.Context, arg ListVehiclesByStatusAndDepotParams) ([]ListVehiclesByStatusAndDepotRow, error)
+	ListVehiclesByStatusAndFacility(ctx context.Context, arg ListVehiclesByStatusAndFacilityParams) ([]ListVehiclesByStatusAndFacilityRow, error)
+	ListVehiclesByStatusAndRefinery(ctx context.Context, arg ListVehiclesByStatusAndRefineryParams) ([]ListVehiclesByStatusAndRefineryRow, error)
 	// Used for 30-day advance expiry notification.
 	ListVehiclesWithExpiringKeur(ctx context.Context) ([]ListVehiclesWithExpiringKeurRow, error)
 	// Operations notice board: trucks needing attention in next 30 days.
@@ -381,6 +394,7 @@ type Querier interface {
 	SetTripArrived(ctx context.Context, id int64) (Trip, error)
 	SetTripCompleted(ctx context.Context, id int64) (Trip, error)
 	SetTripDeparted(ctx context.Context, id int64) (Trip, error)
+	SetUserActive(ctx context.Context, arg SetUserActiveParams) (SetUserActiveRow, error)
 	StartDriverShift(ctx context.Context, id int64) error
 	UnlinkTelegramAccount(ctx context.Context, id int64) error
 	UpdateCompartmentDeliveryStatus(ctx context.Context, arg UpdateCompartmentDeliveryStatusParams) (TripCompartmentDelivery, error)
@@ -411,6 +425,7 @@ type Querier interface {
 	// Called if a document is regenerated (e.g., after variance resolution).
 	UpdateTripDocumentKey(ctx context.Context, arg UpdateTripDocumentKeyParams) (TripDocument, error)
 	UpdateTripStatus(ctx context.Context, arg UpdateTripStatusParams) (Trip, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpdateVehicleDepot(ctx context.Context, arg UpdateVehicleDepotParams) error
 	UpdateVehicleKeurDetails(ctx context.Context, arg UpdateVehicleKeurDetailsParams) (Vehicle, error)

@@ -1,0 +1,220 @@
+{{ define "page" }}{{ template "base" . }}{{ end }}
+
+{{ define "title" }}{{ if .Trip }}Trip {{ .Trip.ID }} | PetroSync{{ else }}Trip | PetroSync{{ end }}{{ end }}
+
+{{ define "content" }}
+{{ $trip := .Trip }}
+<section class="space-y-6">
+  <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div>
+        <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Trip</p>
+        <h2 class="mt-2 text-2xl font-semibold text-slate-950">{{ .Heading }}</h2>
+        <p class="mt-2 max-w-3xl text-sm text-slate-600">{{ .Description }}</p>
+      </div>
+      {{ if $trip }}
+        <div class="flex flex-wrap gap-2">
+          <a href="{{ $trip.WeightBridgeEntryURL }}" class="inline-flex items-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Record Weight Bridge</a>
+          <a href="{{ $trip.DoURL }}" class="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Open Delivery Order</a>
+        </div>
+      {{ end }}
+    </div>
+  </div>
+
+  {{ if $trip }}
+    <section class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+      <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-semibold text-slate-950">{{ $trip.PlateNumber }}</h3>
+            <p class="mt-1 text-sm text-slate-600">{{ $trip.DriverName }}</p>
+          </div>
+          <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium
+            {{ if eq $trip.StatusTone "amber" }}bg-amber-50 text-amber-700
+            {{ else if eq $trip.StatusTone "emerald" }}bg-emerald-50 text-emerald-700
+            {{ else if eq $trip.StatusTone "rose" }}bg-rose-50 text-rose-700
+            {{ else }}bg-slate-100 text-slate-700{{ end }}">
+            {{ $trip.Status }}
+          </span>
+        </div>
+        <dl class="mt-8 grid gap-4 sm:grid-cols-2">
+          <div class="rounded-xl bg-slate-50 p-4">
+            <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Origin Facility</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-950">{{ $trip.OriginFacility }}</dd>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Destination</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-950">{{ $trip.Destination }}</dd>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Driver Telegram</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-950">{{ $trip.DriverTelegram }}</dd>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Delivery Order</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-950">#{{ $trip.DoID }}</dd>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Departed</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-950">{{ $trip.DepartedAt }}</dd>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Arrived</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-950">{{ $trip.ArrivedAt }}</dd>
+          </div>
+        </dl>
+        <div class="mt-4 rounded-xl bg-slate-50 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Completed</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $trip.CompletedAt }}</dd>
+        </div>
+      </div>
+
+      <section class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <h3 class="text-lg font-semibold text-slate-950">Timeline</h3>
+        <p class="mt-2 text-sm text-slate-600">Phase 1 trip events recorded by the existing workflow.</p>
+        <div class="mt-6 space-y-4">
+          {{ if .TripEvents }}
+            {{ range .TripEvents }}
+              <article class="rounded-xl border border-slate-200 p-4">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p class="font-medium text-slate-950">{{ .EventType }}</p>
+                    <p class="mt-1 text-sm text-slate-600">{{ .Actor }}</p>
+                  </div>
+                  <p class="text-sm text-slate-500">{{ .Timestamp }}</p>
+                </div>
+                <pre class="mt-3 overflow-x-auto rounded-lg bg-slate-950 px-3 py-2 text-xs text-slate-100">{{ .Payload }}</pre>
+              </article>
+            {{ end }}
+          {{ else }}
+            <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">No trip events have been recorded yet.</div>
+          {{ end }}
+        </div>
+      </section>
+    </section>
+
+    <section id="weight-bridge" class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-slate-950">Weight Bridge</h3>
+          <p class="mt-2 text-sm text-slate-600">Tare and gross readings tied to this trip.</p>
+        </div>
+        <a href="{{ $trip.WeightBridgeEntryURL }}" class="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Add Reading</a>
+      </div>
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+            <tr>
+              <th class="px-4 py-3 font-medium">Reading</th>
+              <th class="px-4 py-3 font-medium">Weight</th>
+              <th class="px-4 py-3 font-medium">Method</th>
+              <th class="px-4 py-3 font-medium">Approval</th>
+              <th class="px-4 py-3 font-medium">Recorded</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 bg-white">
+            {{ if .WeightBridge }}
+              {{ range .WeightBridge }}
+                <tr>
+                  <td class="px-4 py-4">
+                    <p class="font-medium text-slate-950">{{ .ReadingType }}</p>
+                    <p class="mt-1 text-xs text-slate-500">{{ .CreatedAt }}</p>
+                  </td>
+                  <td class="px-4 py-4 text-slate-600">{{ .Weight }}{{ if ne .Temperature "-" }}<div class="mt-1 text-xs text-slate-500">{{ .Temperature }}</div>{{ end }}</td>
+                  <td class="px-4 py-4 text-slate-600">{{ .Method }}</td>
+                  <td class="px-4 py-4">
+                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium
+                      {{ if eq .ApprovalTone "amber" }}bg-amber-50 text-amber-700
+                      {{ else if eq .ApprovalTone "emerald" }}bg-emerald-50 text-emerald-700
+                      {{ else if eq .ApprovalTone "rose" }}bg-rose-50 text-rose-700
+                      {{ else }}bg-slate-100 text-slate-700{{ end }}">
+                      {{ .ApprovalStatus }}
+                    </span>
+                    <p class="mt-2 text-xs text-slate-500">{{ .ApprovedAt }}</p>
+                  </td>
+                  <td class="px-4 py-4 text-slate-600">
+                    <p>{{ .RecordedBy }}</p>
+                    <p class="mt-1 text-xs text-slate-500">{{ .Notes }}</p>
+                  </td>
+                </tr>
+              {{ end }}
+            {{ else }}
+              <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">No weight bridge readings recorded yet.</td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid gap-6 lg:grid-cols-2">
+      <section class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <h3 class="text-lg font-semibold text-slate-950">Seals</h3>
+        <p class="mt-2 text-sm text-slate-600">Compartment seal issue and verification state.</p>
+        <div class="mt-6 space-y-4">
+          {{ if .Seals }}
+            {{ range .Seals }}
+              <article class="rounded-xl border border-slate-200 p-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="font-medium text-slate-950">{{ .Compartment }}</p>
+                    <p class="mt-1 text-sm text-slate-600">Issued: {{ .IssuedSeal }} by {{ .IssuedBy }}</p>
+                  </div>
+                  <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{{ .Verification }}</span>
+                </div>
+                <dl class="mt-4 grid gap-3 text-sm text-slate-600">
+                  <div>
+                    <dt class="font-medium text-slate-500">Issued At</dt>
+                    <dd>{{ .IssuedAt }}</dd>
+                  </div>
+                  <div>
+                    <dt class="font-medium text-slate-500">Verified Seal</dt>
+                    <dd>{{ .VerifiedSeal }}</dd>
+                  </div>
+                  <div>
+                    <dt class="font-medium text-slate-500">Verified By</dt>
+                    <dd>{{ .VerifiedBy }}</dd>
+                  </div>
+                  <div>
+                    <dt class="font-medium text-slate-500">Verified At</dt>
+                    <dd>{{ .VerifiedAt }}</dd>
+                  </div>
+                  <div>
+                    <dt class="font-medium text-slate-500">Notes</dt>
+                    <dd>{{ .Notes }}</dd>
+                  </div>
+                </dl>
+              </article>
+            {{ end }}
+          {{ else }}
+            <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">No seal records are available for this trip yet.</div>
+          {{ end }}
+        </div>
+      </section>
+
+      <section class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <h3 class="text-lg font-semibold text-slate-950">Photos</h3>
+        <p class="mt-2 text-sm text-slate-600">Evidence from weight bridge, sealing, and delivery steps.</p>
+        <div class="mt-6 grid gap-4 md:grid-cols-2">
+          {{ if .Photos }}
+            {{ range .Photos }}
+              <article class="overflow-hidden rounded-2xl border border-slate-200">
+                <img src="{{ .URL }}" alt="{{ .EventType }}" class="h-44 w-full object-cover">
+                <div class="space-y-2 p-4">
+                  <p class="font-medium text-slate-950">{{ .EventType }}</p>
+                  <p class="text-sm text-slate-600">{{ .Compartment }}</p>
+                  <p class="text-xs text-slate-500">{{ .TakenAt }}</p>
+                  <p class="text-sm text-slate-600">{{ .Notes }}</p>
+                </div>
+              </article>
+            {{ end }}
+          {{ else }}
+            <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">No photo evidence has been uploaded for this trip yet.</div>
+          {{ end }}
+        </div>
+      </section>
+    </section>
+  {{ end }}
+</section>
+{{ end }}

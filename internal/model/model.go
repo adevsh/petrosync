@@ -12,7 +12,9 @@ type RoleGrant struct {
 
 // SessionData is stored in Valkey for dashboard sessions.
 type SessionData struct {
-	UserID     int64       `json:"user_id"`
-	RoleGrants []RoleGrant `json:"role_grants"`
-	ExpiresAt  time.Time   `json:"expires_at"`
+	UserID              int64       `json:"user_id"`
+	FullName            string      `json:"full_name"`
+	RoleGrants          []RoleGrant `json:"role_grants"`
+	ForcePasswordChange bool        `json:"force_password_change"`
+	ExpiresAt           time.Time   `json:"expires_at"`
 }

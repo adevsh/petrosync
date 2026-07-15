@@ -38,6 +38,19 @@ type fakeRoleCache struct {
 	active     map[int64]bool
 }
 
+type fakeSessionStore struct {
+	sessions map[string]model.SessionData
+}
+
+func (f *fakeSessionStore) GetSession(ctx context.Context, sessionID string) (*model.SessionData, error) {
+	session, ok := f.sessions[sessionID]
+	if !ok {
+		return nil, nil
+	}
+	copySession := session
+	return &copySession, nil
+}
+
 func (f *fakeRoleCache) GetRoleGrants(ctx context.Context, userID int64) ([]model.RoleGrant, bool, error) {
 	v, ok := f.roleGrants[userID]
 	if !ok {
@@ -256,5 +269,51 @@ func TestJWTQueryAuth_AllowsValidToken(t *testing.T) {
 	}
 	if body.UserID != 42 {
 		t.Fatalf("expected user_id 42, got %d", body.UserID)
+	}
+}
+
+func TestSessionOrJWTQueryAuth_AllowsDashboardSession(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	secret := "test-secret"
+	facilityID := int64(9)
+	sessions := &fakeSessionStore{
+		sessions: map[string]model.SessionData{
+			"sess-1": {
+				UserID:     42,
+				FullName:   "Facility Operator",
+				RoleGrants: []model.RoleGrant{{Role: "FACILITY_OPERATOR", ScopeType: "FACILITY", ScopeID: &facilityID}},
+				ExpiresAt:  time.Now().Add(time.Hour),
+			},
+		},
+	}
+
+	r := gin.New()
+	r.Use(SessionOrJWTQueryAuth(secret, nil, sessions, nil))
+	r.GET("/ws", func(c *gin.Context) {
+		userID, _ := c.Get("user_id")
+		roles, _ := c.Get("roles")
+		c.JSON(http.StatusOK, gin.H{"user_id": userID, "roles": roles})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/ws", nil)
+	req.AddCookie(&http.Cookie{Name: "petrosync_session", Value: "sess-1"})
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	var body struct {
+		UserID int64             `json:"user_id"`
+		Roles  []model.RoleGrant `json:"roles"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if body.UserID != 42 {
+		t.Fatalf("expected user_id 42, got %d", body.UserID)
+	}
+	if len(body.Roles) != 1 || body.Roles[0].Role != "FACILITY_OPERATOR" {
+		t.Fatalf("unexpected roles: %#v", body.Roles)
 	}
 }

@@ -1,0 +1,181 @@
+{{ define "page" }}{{ template "base" . }}{{ end }}
+
+{{ define "title" }}{{ if .DeliveryOrder }}{{ .DeliveryOrder.DoNumber }} | PetroSync{{ else }}Delivery Order | PetroSync{{ end }}{{ end }}
+
+{{ define "content" }}
+<section class="space-y-6">
+  <div class="flex flex-col gap-3 rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <h2 class="text-2xl font-semibold text-slate-950">{{ .Heading }}</h2>
+      <p class="mt-2 max-w-3xl text-sm text-slate-600">{{ .Description }}</p>
+    </div>
+    {{ if .DeliveryOrder }}
+      <a href="/facilities/{{ .DeliveryOrder.OriginFacilityID }}/delivery-orders" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Back to Queue</a>
+    {{ end }}
+  </div>
+
+  {{ template "delivery-order-detail-panels" . }}
+
+  <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+    <div class="border-b border-slate-200 px-6 py-4">
+      <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Line Items</h3>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+          <tr>
+            <th class="px-6 py-3 font-medium">Fuel</th>
+            <th class="px-6 py-3 font-medium">Compartment</th>
+            <th class="px-6 py-3 font-medium">Requested</th>
+            <th class="px-6 py-3 font-medium">Allocated</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white">
+          {{ if .DeliveryOrderItems }}
+            {{ range .DeliveryOrderItems }}
+              <tr>
+                <td class="px-6 py-4 font-medium text-slate-950">{{ .FuelType }}</td>
+                <td class="px-6 py-4 text-slate-600">{{ .Compartment }}</td>
+                <td class="px-6 py-4 text-slate-600">{{ .RequestedVolume }}</td>
+                <td class="px-6 py-4 text-slate-600">{{ .AllocatedVolume }}</td>
+              </tr>
+            {{ end }}
+          {{ else }}
+            <tr>
+              <td colspan="4" class="px-6 py-8 text-center text-sm text-slate-500">No line items found for this delivery order.</td>
+            </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+{{ end }}
+
+{{ define "delivery-order-detail-panels" }}
+{{ $order := .DeliveryOrder }}
+<div id="delivery-order-detail-panels" class="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+  {{ if $order }}
+    <section class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Delivery Order</p>
+          <h3 class="mt-2 text-2xl font-semibold text-slate-950">{{ $order.DoNumber }}</h3>
+          <div class="mt-3">
+            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium
+              {{ if eq $order.StatusTone "amber" }}bg-amber-50 text-amber-700
+              {{ else if eq $order.StatusTone "emerald" }}bg-emerald-50 text-emerald-700
+              {{ else if eq $order.StatusTone "rose" }}bg-rose-50 text-rose-700
+              {{ else }}bg-slate-100 text-slate-700{{ end }}">
+              {{ $order.Status }}
+            </span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          {{ if $order.CanApprove }}
+            <button
+              type="button"
+              class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              hx-post="{{ $order.ApproveURL }}"
+              hx-target="#delivery-order-detail-panels"
+              hx-swap="outerHTML"
+              hx-confirm="Approve {{ $order.DoNumber }}?"
+              hx-disabled-elt="this"
+            >
+              <span class="htmx-hide-on-request">Approve</span>
+              <span class="htmx-indicator">Working...</span>
+            </button>
+          {{ end }}
+          {{ if $order.TripURL }}
+            <a href="{{ $order.TripURL }}" class="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Open Trip</a>
+          {{ end }}
+        </div>
+      </div>
+
+      <dl class="mt-8 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-xl bg-slate-50 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Origin Facility</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $order.OriginFacility }}</dd>
+        </div>
+        <div class="rounded-xl bg-slate-50 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Destination</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $order.Destination }}</dd>
+        </div>
+        <div class="rounded-xl bg-slate-50 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Scheduled Date</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $order.ScheduledDate }}</dd>
+        </div>
+        <div class="rounded-xl bg-slate-50 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Raised By</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $order.RaisedBy }}</dd>
+        </div>
+        <div class="rounded-xl bg-slate-50 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Approved At</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $order.ApprovedAt }}</dd>
+        </div>
+        <div class="rounded-xl bg-slate-50 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Assigned At</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $order.AssignedAt }}</dd>
+        </div>
+        <div class="rounded-xl bg-slate-50 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Vehicle</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $order.AssignedVehicle }}</dd>
+        </div>
+        <div class="rounded-xl bg-slate-50 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Driver</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $order.AssignedDriver }}</dd>
+        </div>
+      </dl>
+
+      <div class="mt-6 rounded-xl bg-slate-50 p-4">
+        <p class="text-xs uppercase tracking-[0.16em] text-slate-500">Notes</p>
+        <p class="mt-2 text-sm text-slate-700">{{ $order.Notes }}</p>
+      </div>
+    </section>
+
+    <section id="assignment" class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+      <h3 class="text-lg font-semibold text-slate-950">Assign Vehicle and Driver</h3>
+      <p class="mt-2 text-sm text-slate-600">This uses the existing assignment transition and updates the detail fragment in place.</p>
+
+      {{ if $order.ActionError }}
+        <div class="mt-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $order.ActionError }}</div>
+      {{ end }}
+
+      {{ if $order.CanAssign }}
+        <form class="mt-6 space-y-5" hx-post="{{ $order.AssignURL }}" hx-target="#delivery-order-detail-panels" hx-swap="outerHTML" hx-confirm="Assign the selected vehicle and driver?" hx-disabled-elt="button[type='submit']">
+          <div>
+            <label for="vehicle_id" class="block text-sm font-medium text-slate-700">Vehicle</label>
+            <select id="vehicle_id" name="vehicle_id" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-950 focus:outline-none focus:ring-1 focus:ring-slate-950">
+              <option value="">Select a vehicle</option>
+              {{ range .VehicleOptions }}
+                <option value="{{ .ID }}">{{ .Label }}{{ if .Hint }} - {{ .Hint }}{{ end }}</option>
+              {{ end }}
+            </select>
+          </div>
+
+          <div>
+            <label for="driver_id" class="block text-sm font-medium text-slate-700">Driver</label>
+            <select id="driver_id" name="driver_id" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-950 focus:outline-none focus:ring-1 focus:ring-slate-950">
+              <option value="">Select a driver</option>
+              {{ range .DriverOptions }}
+                <option value="{{ .ID }}">{{ .Label }}{{ if .Hint }} - {{ .Hint }}{{ end }}</option>
+              {{ end }}
+            </select>
+          </div>
+
+          <div class="flex justify-end">
+            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+              <span class="htmx-hide-on-request">Save Assignment</span>
+              <span class="htmx-indicator">Saving...</span>
+            </button>
+          </div>
+        </form>
+      {{ else }}
+        <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          Assignment becomes available after approval. Existing assignments remain visible here for reference.
+        </div>
+      {{ end }}
+    </section>
+  {{ end }}
+</div>
+{{ end }}

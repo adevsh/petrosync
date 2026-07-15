@@ -1,0 +1,97 @@
+{{ define "page" }}{{ template "base" . }}{{ end }}
+
+{{ define "title" }}Create User | PetroSync{{ end }}
+
+{{ define "content" }}
+<section class="mx-auto max-w-3xl space-y-6">
+  <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+    <h2 class="text-2xl font-semibold text-slate-950">{{ .Heading }}</h2>
+    <p class="mt-2 text-sm text-slate-600">{{ .Description }}</p>
+  </div>
+
+  <section class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+    <form id="create-user-form" class="space-y-5">
+      <div id="create-user-feedback" class="hidden rounded-lg border px-4 py-3 text-sm"></div>
+
+      <div>
+        <label for="username" class="block text-sm font-medium text-slate-700">Username</label>
+        <input id="username" name="username" type="text" required class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-950 focus:outline-none focus:ring-1 focus:ring-slate-950">
+      </div>
+
+      <div>
+        <label for="full_name" class="block text-sm font-medium text-slate-700">Full Name</label>
+        <input id="full_name" name="full_name" type="text" required class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-950 focus:outline-none focus:ring-1 focus:ring-slate-950">
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-slate-700">Temporary Password</label>
+        <input id="password" name="password" type="password" minlength="8" required class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-950 focus:outline-none focus:ring-1 focus:ring-slate-950">
+        <p class="mt-2 text-xs text-slate-500">The backend will enforce a password change on first sign-in.</p>
+      </div>
+
+      <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <a href="/users" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Cancel</a>
+        <button id="create-user-submit" type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Create User</button>
+      </div>
+    </form>
+  </section>
+</section>
+{{ end }}
+
+{{ define "scripts" }}
+<script>
+  (() => {
+    const form = document.getElementById("create-user-form");
+    if (!form) return;
+
+    const feedback = document.getElementById("create-user-feedback");
+    const submit = document.getElementById("create-user-submit");
+
+    const showFeedback = (message, tone) => {
+      feedback.textContent = message;
+      feedback.className = "rounded-lg border px-4 py-3 text-sm";
+      if (tone === "error") {
+        feedback.classList.add("border-rose-200", "bg-rose-50", "text-rose-700");
+      } else {
+        feedback.classList.add("border-emerald-200", "bg-emerald-50", "text-emerald-700");
+      }
+    };
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      submit.disabled = true;
+      submit.textContent = "Creating...";
+
+      const payload = {
+        username: form.username.value.trim(),
+        full_name: form.full_name.value.trim(),
+        password: form.password.value
+      };
+
+      try {
+        const response = await fetch("/dashboard-api/users", {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.error?.message || "failed to create user");
+        }
+
+        showFeedback("User created. Redirecting...", "success");
+        window.location.assign(`/users/${data.data.id}`);
+      } catch (error) {
+        showFeedback(error.message || "failed to create user", "error");
+      } finally {
+        submit.disabled = false;
+        submit.textContent = "Create User";
+      }
+    });
+  })();
+</script>
+{{ end }}

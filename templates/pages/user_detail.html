@@ -1,0 +1,386 @@
+{{ define "page" }}{{ template "base" . }}{{ end }}
+
+{{ define "title" }}{{ if .SelectedUser }}{{ .SelectedUser.FullName }} | PetroSync{{ else }}User | PetroSync{{ end }}{{ end }}
+
+{{ define "content" }}
+{{ $user := .SelectedUser }}
+<section class="space-y-6">
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+    <section class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 class="text-2xl font-semibold text-slate-950">{{ .Heading }}</h2>
+          <p class="mt-2 text-sm text-slate-600">{{ .Description }}</p>
+        </div>
+        <a href="/users" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Back to Users</a>
+      </div>
+
+      {{ if $user }}
+        <dl class="mt-8 grid gap-4 sm:grid-cols-2">
+          <div class="rounded-xl bg-slate-50 p-4">
+            <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Username</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-950">{{ $user.Username }}</dd>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Status</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-950">{{ if $user.Active }}Active{{ else }}Inactive{{ end }}</dd>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Telegram</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-950">{{ if $user.TelegramUserID }}Linked{{ else }}Not linked{{ end }}</dd>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-4">
+            <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Password Policy</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-950">{{ if $user.ForcePasswordChange }}Password change required{{ else }}Normal sign-in{{ end }}</dd>
+          </div>
+        </dl>
+      {{ end }}
+    </section>
+
+    <section class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h3 class="text-lg font-semibold text-slate-950">Reset Password</h3>
+          <p class="mt-2 text-sm text-slate-600">This uses the existing reset response contract and shows any fallback temporary password returned by the backend.</p>
+        </div>
+      </div>
+
+      <div id="reset-feedback" class="mt-6 hidden rounded-lg border px-4 py-3 text-sm"></div>
+
+      <form id="reset-password-form" class="mt-6">
+        <button id="reset-password-submit" type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Reset Password</button>
+      </form>
+
+      <div id="reset-result" class="mt-6 hidden rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <h4 class="text-sm font-semibold text-slate-950">Reset Result</h4>
+        <dl class="mt-4 space-y-3 text-sm text-slate-700">
+          <div class="flex items-start justify-between gap-4">
+            <dt>Message</dt>
+            <dd id="reset-message" class="text-right font-medium text-slate-950"></dd>
+          </div>
+          <div class="flex items-start justify-between gap-4">
+            <dt>Telegram Linked</dt>
+            <dd id="reset-telegram-linked" class="text-right font-medium text-slate-950"></dd>
+          </div>
+          <div class="flex items-start justify-between gap-4">
+            <dt>Telegram Delivered</dt>
+            <dd id="reset-telegram-delivered" class="text-right font-medium text-slate-950"></dd>
+          </div>
+          <div id="reset-temp-password-row" class="hidden flex items-start justify-between gap-4">
+            <dt>Temporary Password</dt>
+            <dd id="reset-temp-password" class="rounded bg-slate-900 px-2 py-1 font-mono text-xs text-slate-100"></dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+    <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div class="border-b border-slate-200 px-6 py-4">
+        <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Active Roles</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 text-sm">
+          <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+            <tr>
+              <th class="px-6 py-3 font-medium">Role</th>
+              <th class="px-6 py-3 font-medium">Scope</th>
+              <th class="px-6 py-3 font-medium text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 bg-white">
+            {{ if .RoleGrants }}
+              {{ range .RoleGrants }}
+                <tr>
+                  <td class="px-6 py-4 font-medium text-slate-950">{{ .Role }}</td>
+                  <td class="px-6 py-4 text-slate-600">
+                    {{ if eq .ScopeType "COMPANY" }}
+                      COMPANY
+                    {{ else if .ScopeID }}
+                      {{ .ScopeType }} #{{ .ScopeID }}
+                    {{ else }}
+                      {{ .ScopeType }}
+                    {{ end }}
+                  </td>
+                  <td class="px-6 py-4 text-right">
+                    <button
+                      type="button"
+                      class="revoke-role-button inline-flex items-center rounded-lg border border-rose-200 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
+                      data-role="{{ .Role }}"
+                      data-scope-type="{{ .ScopeType }}"
+                      data-scope-id="{{ if and (ne .ScopeType "COMPANY") .ScopeID }}{{ .ScopeID }}{{ end }}"
+                    >
+                      Revoke
+                    </button>
+                  </td>
+                </tr>
+              {{ end }}
+            {{ else }}
+              <tr>
+                <td colspan="3" class="px-6 py-8 text-center text-sm text-slate-500">No active roles found for this user.</td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+      <h3 class="text-lg font-semibold text-slate-950">Grant Role</h3>
+      <p class="mt-2 text-sm text-slate-600">Use the same role and scope fields accepted by the backend admin handler.</p>
+
+      <div id="role-feedback" class="mt-6 hidden rounded-lg border px-4 py-3 text-sm"></div>
+
+      <form id="grant-role-form" class="mt-6 space-y-5">
+        <div>
+          <label for="role" class="block text-sm font-medium text-slate-700">Role</label>
+          <select id="role" name="role" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-950 focus:outline-none focus:ring-1 focus:ring-slate-950">
+            {{ range .RoleOptions }}
+              <option value="{{ . }}">{{ . }}</option>
+            {{ end }}
+          </select>
+        </div>
+
+        <div>
+          <label for="scope_type" class="block text-sm font-medium text-slate-700">Scope Type</label>
+          <select id="scope_type" name="scope_type" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-950 focus:outline-none focus:ring-1 focus:ring-slate-950">
+            {{ range .ScopeOptions }}
+              <option value="{{ . }}">{{ . }}</option>
+            {{ end }}
+          </select>
+        </div>
+
+        <div>
+          <label for="scope_id" class="block text-sm font-medium text-slate-700">Scope ID</label>
+          <input id="scope_id" name="scope_id" type="number" min="1" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-slate-950 focus:outline-none focus:ring-1 focus:ring-slate-950">
+          <p id="scope-id-help" class="mt-2 text-xs text-slate-500">Leave this blank for `COMPANY`. For other scopes, enter the matching resource ID or use a suggestion below.</p>
+        </div>
+
+        <div class="flex justify-end">
+          <button id="grant-role-submit" type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Grant Role</button>
+        </div>
+      </form>
+
+      {{ if .ScopeReferences }}
+        <div class="mt-8 border-t border-slate-200 pt-6">
+          <h4 class="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Scope Reference</h4>
+          <p class="mt-2 text-sm text-slate-600">Click a resource to fill `scope_type` and `scope_id`.</p>
+
+          <div class="mt-4 space-y-4">
+            {{ range .ScopeReferences }}
+              {{ $scopeType := .ScopeType }}
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{{ $scopeType }}</p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  {{ range .Items }}
+                    <button
+                      type="button"
+                      class="scope-suggestion inline-flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-left text-sm text-slate-700 hover:border-slate-300 hover:bg-white hover:text-slate-950"
+                      data-scope-type="{{ $scopeType }}"
+                      data-scope-id="{{ .ID }}"
+                    >
+                      <span class="font-medium">{{ .Label }}</span>
+                      <span class="text-xs text-slate-500">#{{ .ID }}{{ if .Detail }} · {{ .Detail }}{{ end }}</span>
+                    </button>
+                  {{ end }}
+                </div>
+              </div>
+            {{ end }}
+          </div>
+        </div>
+      {{ end }}
+    </section>
+  </div>
+</section>
+{{ end }}
+
+{{ define "scripts" }}
+<script>
+  (() => {
+    const userID = {{ if .SelectedUser }}{{ .SelectedUser.ID }}{{ else }}0{{ end }};
+    if (!userID) return;
+
+    const showFeedback = (element, message, tone) => {
+      element.textContent = message;
+      element.className = "rounded-lg border px-4 py-3 text-sm";
+      if (tone === "error") {
+        element.classList.add("border-rose-200", "bg-rose-50", "text-rose-700");
+      } else {
+        element.classList.add("border-emerald-200", "bg-emerald-50", "text-emerald-700");
+      }
+    };
+
+    const requestJSON = async (url, options) => {
+      const response = await fetch(url, {
+        headers: {
+          "Accept": "application/json",
+          ...(options && options.body ? { "Content-Type": "application/json" } : {})
+        },
+        ...options
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        if (response.redirected) {
+          window.location.assign(response.url);
+          return null;
+        }
+        throw new Error("unexpected response");
+      }
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error?.message || "request failed");
+      }
+      return payload;
+    };
+
+    const resetForm = document.getElementById("reset-password-form");
+    const resetSubmit = document.getElementById("reset-password-submit");
+    const resetFeedback = document.getElementById("reset-feedback");
+    const resetResult = document.getElementById("reset-result");
+    const resetMessage = document.getElementById("reset-message");
+    const resetTelegramLinked = document.getElementById("reset-telegram-linked");
+    const resetTelegramDelivered = document.getElementById("reset-telegram-delivered");
+    const resetTempPasswordRow = document.getElementById("reset-temp-password-row");
+    const resetTempPassword = document.getElementById("reset-temp-password");
+
+    resetForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!window.confirm("Reset this user's password?")) {
+        return;
+      }
+      resetSubmit.disabled = true;
+      resetSubmit.textContent = "Resetting...";
+
+      try {
+        const payload = await requestJSON(`/dashboard-api/users/${userID}/reset-password`, {
+          method: "POST",
+          body: JSON.stringify({ user_id: userID })
+        });
+        if (!payload) return;
+
+        showFeedback(resetFeedback, "Password reset completed.", "success");
+        resetMessage.textContent = payload.data.message || "";
+        resetTelegramLinked.textContent = String(payload.data.telegram_linked);
+        resetTelegramDelivered.textContent = String(payload.data.telegram_delivered);
+        if (payload.data.temp_password) {
+          resetTempPassword.textContent = payload.data.temp_password;
+          resetTempPasswordRow.classList.remove("hidden");
+          resetTempPasswordRow.classList.add("flex");
+        } else {
+          resetTempPassword.textContent = "";
+          resetTempPasswordRow.classList.add("hidden");
+          resetTempPasswordRow.classList.remove("flex");
+        }
+        resetResult.classList.remove("hidden");
+      } catch (error) {
+        showFeedback(resetFeedback, error.message || "password reset failed", "error");
+      } finally {
+        resetSubmit.disabled = false;
+        resetSubmit.textContent = "Reset Password";
+      }
+    });
+
+    const roleForm = document.getElementById("grant-role-form");
+    const roleSubmit = document.getElementById("grant-role-submit");
+    const roleFeedback = document.getElementById("role-feedback");
+    const scopeTypeSelect = document.getElementById("scope_type");
+    const scopeIDInput = document.getElementById("scope_id");
+    const scopeIDHelp = document.getElementById("scope-id-help");
+
+    const syncScopeField = () => {
+      const companyScope = scopeTypeSelect.value === "COMPANY";
+      scopeIDInput.disabled = companyScope;
+      scopeIDInput.required = !companyScope;
+      if (companyScope) {
+        scopeIDInput.value = "";
+        scopeIDInput.placeholder = "Not required for COMPANY";
+        scopeIDHelp.textContent = "COMPANY grants do not require a scope ID.";
+      } else {
+        scopeIDInput.placeholder = "Enter a resource ID";
+        scopeIDHelp.textContent = "Enter the matching resource ID or use a suggestion below.";
+      }
+    };
+
+    scopeTypeSelect.addEventListener("change", syncScopeField);
+    syncScopeField();
+
+    roleForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      roleSubmit.disabled = true;
+      roleSubmit.textContent = "Granting...";
+
+      const scopeType = roleForm.scope_type.value;
+      const scopeIDRaw = roleForm.scope_id.value.trim();
+      const body = {
+        role: roleForm.role.value,
+        scope_type: scopeType
+      };
+      if (scopeType !== "COMPANY" && !scopeIDRaw) {
+        showFeedback(roleFeedback, "scope_id is required for this scope type", "error");
+        roleSubmit.disabled = false;
+        roleSubmit.textContent = "Grant Role";
+        return;
+      }
+      if (scopeType !== "COMPANY" && scopeIDRaw) {
+        body.scope_id = Number(scopeIDRaw);
+      }
+
+      try {
+        await requestJSON(`/dashboard-api/users/${userID}/roles`, {
+          method: "POST",
+          body: JSON.stringify(body)
+        });
+        window.location.reload();
+      } catch (error) {
+        showFeedback(roleFeedback, error.message || "role grant failed", "error");
+      } finally {
+        roleSubmit.disabled = false;
+        roleSubmit.textContent = "Grant Role";
+      }
+    });
+
+    document.querySelectorAll(".revoke-role-button").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const role = button.dataset.role;
+        const scopeType = button.dataset.scopeType;
+        const scopeID = button.dataset.scopeId;
+        if (!window.confirm(`Revoke ${role} from this user?`)) {
+          return;
+        }
+
+        button.disabled = true;
+        try {
+          const body = {
+            role,
+            scope_type: scopeType
+          };
+          if (scopeType !== "COMPANY" && scopeID) {
+            body.scope_id = Number(scopeID);
+          }
+
+          await requestJSON(`/dashboard-api/users/${userID}/roles`, {
+            method: "DELETE",
+            body: JSON.stringify(body)
+          });
+          window.location.reload();
+        } catch (error) {
+          showFeedback(roleFeedback, error.message || "role revoke failed", "error");
+          button.disabled = false;
+        }
+      });
+    });
+
+    document.querySelectorAll(".scope-suggestion").forEach((button) => {
+      button.addEventListener("click", () => {
+        scopeTypeSelect.value = button.dataset.scopeType;
+        syncScopeField();
+        scopeIDInput.value = button.dataset.scopeId || "";
+        scopeIDInput.focus();
+      });
+    });
+  })();
+</script>
+{{ end }}

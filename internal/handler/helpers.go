@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 // floatToNumeric converts a float64 to pgtype.Numeric.
@@ -40,4 +41,17 @@ func floatToNumeric(f float64) pgtype.Numeric {
 		Exp:   -int32(len(fracPart)),
 		Valid: true,
 	}
+}
+
+func numericToFloat64(n pgtype.Numeric) (*float64, bool) {
+	if !n.Valid || n.Int == nil {
+		return nil, false
+	}
+
+	value, exact := decimal.NewFromBigInt(n.Int, n.Exp).Float64()
+	if !exact {
+		return nil, false
+	}
+
+	return &value, true
 }

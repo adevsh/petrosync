@@ -1,0 +1,36 @@
+{{ define "base" }}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ block "title" . }}PetroSync{{ end }}</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <link rel="stylesheet" href="/static/css/dist.css">
+    <style>
+      .htmx-indicator { display: none; }
+      .htmx-request .htmx-indicator,
+      .htmx-request.htmx-indicator { display: inline-flex; }
+      .htmx-request .htmx-hide-on-request { display: none; }
+    </style>
+    {{ block "head" . }}{{ end }}
+  </head>
+  <body class="min-h-screen bg-slate-100 text-slate-950">
+    <div class="min-h-screen lg:flex">
+      {{ if .Authenticated }}
+        {{ template "sidebar" . }}
+      {{ end }}
+      <main class="min-h-screen flex-1">
+        {{ if .Authenticated }}
+          {{ template "topbar" . }}
+        {{ end }}
+        <div id="page-content" class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+          {{ template "flash" . }}
+          {{ block "content" . }}{{ end }}
+        </div>
+      </main>
+    </div>
+    {{ block "scripts" . }}{{ end }}
+  </body>
+</html>
+{{ end }}

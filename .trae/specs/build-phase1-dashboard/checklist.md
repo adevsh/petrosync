@@ -1,0 +1,12 @@
+- [x] Bun + Tailwind asset pipeline builds dashboard CSS successfully
+- [x] Dashboard login, logout, and forced password change flows work with session auth
+- [x] Role-based redirect from `/` sends users to the correct scoped landing page
+- [x] Shared dashboard layout renders sidebar, topbar, and content regions consistently
+- [x] Company and facility overview pages render live operational summaries
+- [x] Live map page or region updates markers from `/ws/trips/active` without HTMX replacing the map container
+- [x] Delivery order queue and detail flows support HTMX approval and assignment updates
+- [x] Trip pages expose timeline, weight bridge, seals, and photo information needed in Phase 1
+- [x] Fleet and station pages show maintenance and tank-level context for their scoped roles
+- [x] User management pages support listing users, assigning roles, and resetting passwords
+- [x] Focused tests cover dashboard auth, redirects, and key page behaviors
+- [x] `SKILL.md` Phase 1 dashboard checklist is updated only for items proven complete

@@ -1,0 +1,16 @@
+{{ define "sidebar" }}
+<aside class="hidden w-72 bg-slate-950 text-slate-100 lg:flex lg:flex-col">
+  <div class="border-b border-slate-800 px-6 py-5">
+    <p class="text-xs uppercase tracking-[0.2em] text-slate-400">PetroSync</p>
+    <p class="mt-2 text-lg font-semibold">Dashboard</p>
+  </div>
+  <nav class="flex-1 space-y-1 px-4 py-4">
+    {{ range .NavItems }}
+      <a href="{{ .URL }}" class="block rounded-lg px-3 py-2 text-sm {{ if eq $.CurrentPath .URL }}bg-slate-800 text-white{{ else }}text-slate-300 hover:bg-slate-900 hover:text-white{{ end }}">{{ .Label }}</a>
+    {{ end }}
+  </nav>
+  <form action="/logout" method="post" class="border-t border-slate-800 p-4">
+    <button type="submit" class="w-full rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-950">Log out</button>
+  </form>
+</aside>
+{{ end }}

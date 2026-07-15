@@ -1,0 +1,25 @@
+{{ define "page" }}{{ template "base" . }}{{ end }}
+
+{{ define "title" }}Sign In | PetroSync{{ end }}
+
+{{ define "content" }}
+<div class="mx-auto max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+  <div class="mb-6">
+    <p class="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Dashboard Access</p>
+    <h1 class="mt-2 text-2xl font-semibold text-slate-950">{{ .Heading }}</h1>
+    <p class="mt-2 text-sm text-slate-600">{{ .Description }}</p>
+  </div>
+
+  <form action="/login" method="post" class="space-y-4">
+    <div>
+      <label for="username" class="mb-2 block text-sm font-medium text-slate-700">Username</label>
+      <input id="username" name="username" type="text" value="{{ .Username }}" autocomplete="username" class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-0 transition focus:border-slate-500" required>
+    </div>
+    <div>
+      <label for="password" class="mb-2 block text-sm font-medium text-slate-700">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" class="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-0 transition focus:border-slate-500" required>
+    </div>
+    <button type="submit" class="w-full rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white">Sign In</button>
+  </form>
+</div>
+{{ end }}

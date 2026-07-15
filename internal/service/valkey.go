@@ -60,7 +60,14 @@ func (v *ValkeyService) SaveSession(ctx context.Context, sessionID string, data 
 		return fmt.Errorf("marshal session: %w", err)
 	}
 	key := fmt.Sprintf("sess:%s", sessionID)
-	return v.client.Do(ctx, v.client.B().Set().Key(key).Value(string(payload)).Px(8*time.Hour).Build()).Error()
+	ttl := 8 * time.Hour
+	if !data.ExpiresAt.IsZero() {
+		ttl = time.Until(data.ExpiresAt)
+		if ttl <= 0 {
+			ttl = time.Second
+		}
+	}
+	return v.client.Do(ctx, v.client.B().Set().Key(key).Value(string(payload)).Px(ttl).Build()).Error()
 }
 
 // GetSession retrieves a dashboard session. Returns nil if not found or expired.

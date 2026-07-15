@@ -899,20 +899,20 @@ Each job runs in its own goroutine. Use `recover()` in every job — a panic mus
 
 ### Dashboard Tasks
 
-- [ ] Bun + Tailwind CSS setup → `make css`
-- [ ] Base layout: sidebar, topbar, breadcrumb
-- [ ] Login page + forced password change page
-- [ ] Dashboard home: active trips, available vehicles, pending DOs
-- [ ] Live map page: Leaflet JS island + WebSocket connection
-- [ ] DO list + queue (HTMX table refresh)
-- [ ] DO detail: approval form, vehicle/driver assignment
-- [ ] Trip detail: event timeline, weight bridge, seals, photo gallery
-- [ ] Weight bridge entry form
+- [x] Bun + Tailwind CSS setup → `make css`
+- [x] Base layout: sidebar, topbar, breadcrumb
+- [x] Login page + forced password change page
+- [x] Dashboard home: active trips, available vehicles, pending DOs
+- [x] Live map page: Leaflet JS island + WebSocket connection
+- [x] DO list + queue (HTMX table refresh)
+- [x] DO detail: approval form, vehicle/driver assignment
+- [x] Trip detail: event timeline, weight bridge, seals, photo gallery
+- [x] Weight bridge entry form
 - [ ] Weight bridge approval queue page (FACILITY_MANAGER)
-- [ ] Fleet list + vehicle detail + maintenance records
-- [ ] Station list + tank level gauges
-- [ ] Station detail + tank history
-- [ ] User management: list, create, role assignment, password reset
+- [x] Fleet list + vehicle detail + maintenance records
+- [x] Station list + tank level gauges
+- [x] Station detail + tank history
+- [x] User management: list, create, role assignment, password reset
 
 ---
 

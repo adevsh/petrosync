@@ -1,0 +1,160 @@
+{{ define "page" }}{{ template "base" . }}{{ end }}
+
+{{ define "title" }}{{ if .Station }}{{ .Station.Name }} | PetroSync{{ else }}Station | PetroSync{{ end }}{{ end }}
+
+{{ define "content" }}
+{{ $station := .Station }}
+<section class="space-y-6">
+  <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+    <h2 class="text-2xl font-semibold text-slate-950">{{ .Heading }}</h2>
+    <p class="mt-2 max-w-3xl text-sm text-slate-600">{{ .Description }}</p>
+    {{ if $station }}
+      <dl class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Code</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $station.Code }}</dd>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Facility</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $station.Facility }}</dd>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Region</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $station.Region }}</dd>
+        </div>
+        <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">License</dt>
+          <dd class="mt-2 text-sm font-medium text-slate-950">{{ $station.LicenseNumber }}</dd>
+        </div>
+      </dl>
+      <dl class="mt-4 grid gap-4 lg:grid-cols-3">
+        <div class="rounded-xl border border-slate-200 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Address</dt>
+          <dd class="mt-2 text-sm text-slate-700">{{ $station.Address }}</dd>
+        </div>
+        <div class="rounded-xl border border-slate-200 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Contact</dt>
+          <dd class="mt-2 text-sm text-slate-700">{{ $station.ContactName }}</dd>
+        </div>
+        <div class="rounded-xl border border-slate-200 p-4">
+          <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Phone</dt>
+          <dd class="mt-2 text-sm text-slate-700">{{ $station.ContactPhone }}</dd>
+        </div>
+      </dl>
+    {{ end }}
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-3">
+    {{ range .Metrics }}
+      <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <p class="text-sm font-medium text-slate-500">{{ .Label }}</p>
+        <p class="mt-3 text-3xl font-semibold text-slate-950">{{ .Value }}</p>
+        <p class="mt-2 text-sm text-slate-600">{{ .Help }}</p>
+      </div>
+    {{ end }}
+  </div>
+
+  <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+    <div class="border-b border-slate-200 px-6 py-4">
+      <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Tank Levels</h3>
+      <p class="mt-1 text-sm text-slate-600">Current fill percentage and reorder threshold for each active tank.</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+          <tr>
+            <th class="px-6 py-3 font-medium">Tank</th>
+            <th class="px-6 py-3 font-medium">Fuel</th>
+            <th class="px-6 py-3 font-medium">Current</th>
+            <th class="px-6 py-3 font-medium">Capacity</th>
+            <th class="px-6 py-3 font-medium">Reorder</th>
+            <th class="px-6 py-3 font-medium">Last Dip</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white">
+          {{ if .StationTanks }}
+            {{ range .StationTanks }}
+              <tr>
+                <td class="px-6 py-4">
+                  <p class="font-medium text-slate-950">{{ .TankCode }}</p>
+                  {{ if .NeedsReorder }}
+                    <p class="mt-2 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">Needs reorder</p>
+                  {{ end }}
+                </td>
+                <td class="px-6 py-4 text-slate-600">
+                  <p>{{ .FuelName }}</p>
+                  <p class="mt-1 text-xs text-slate-500">{{ .FuelCategory }}</p>
+                </td>
+                <td class="px-6 py-4 text-slate-600">
+                  <p>{{ .CurrentVolume }}</p>
+                  <p class="mt-1 text-xs text-slate-500">{{ .FillPct }}</p>
+                </td>
+                <td class="px-6 py-4 text-slate-600">{{ .Capacity }}</td>
+                <td class="px-6 py-4 text-slate-600">{{ .ReorderThreshold }}</td>
+                <td class="px-6 py-4 text-slate-600">{{ .LastDip }}</td>
+              </tr>
+            {{ end }}
+          {{ else }}
+            <tr>
+              <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-500">No active station tanks are configured yet.</td>
+            </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+    <div class="border-b border-slate-200 px-6 py-4">
+      <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Delivery History</h3>
+      <p class="mt-1 text-sm text-slate-600">Recent active and completed trips for this station.</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+          <tr>
+            <th class="px-6 py-3 font-medium">Trip</th>
+            <th class="px-6 py-3 font-medium">Vehicle</th>
+            <th class="px-6 py-3 font-medium">Origin</th>
+            <th class="px-6 py-3 font-medium">Timestamp</th>
+            <th class="px-6 py-3 font-medium text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white">
+          {{ if .StationDeliveries }}
+            {{ range .StationDeliveries }}
+              <tr>
+                <td class="px-6 py-4">
+                  <p class="font-medium text-slate-950">Trip #{{ .TripID }}</p>
+                  <div class="mt-2">
+                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium
+                      {{ if eq .StatusTone "amber" }}bg-amber-50 text-amber-700
+                      {{ else if eq .StatusTone "emerald" }}bg-emerald-50 text-emerald-700
+                      {{ else if eq .StatusTone "rose" }}bg-rose-50 text-rose-700
+                      {{ else }}bg-slate-100 text-slate-700{{ end }}">
+                      {{ .Status }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-slate-600">
+                  <p>{{ .Vehicle }}</p>
+                  <p class="mt-1 text-xs text-slate-500">{{ .Driver }}</p>
+                </td>
+                <td class="px-6 py-4 text-slate-600">{{ .OriginFacility }}</td>
+                <td class="px-6 py-4 text-slate-600">{{ .Timestamp }}</td>
+                <td class="px-6 py-4 text-right">
+                  <a href="{{ .DetailURL }}" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Open</a>
+                </td>
+              </tr>
+            {{ end }}
+          {{ else }}
+            <tr>
+              <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-500">No recent delivery history is available yet.</td>
+            </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+{{ end }}

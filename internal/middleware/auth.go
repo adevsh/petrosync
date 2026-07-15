@@ -276,3 +276,139 @@ func JWTQueryAuth(secret string, querier RoleQuerier, cache RoleCache) gin.Handl
 		c.Next()
 	}
 }
+
+func SessionOrJWTQueryAuth(secret string, querier RoleQuerier, sessions SessionStore, cache RoleCache) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if sessions != nil {
+			sessionID, err := c.Cookie("petrosync_session")
+			if err == nil {
+				session, err := loadSession(c.Request.Context(), sessions, sessionID)
+				if err == nil && session != nil {
+					roles := make([]model.RoleGrant, len(session.RoleGrants))
+					copy(roles, session.RoleGrants)
+
+					c.Set("user_id", session.UserID)
+					c.Set("full_name", session.FullName)
+					c.Set("roles", roles)
+					c.Set("session_id", sessionID)
+					c.Set("session", *session)
+					c.Next()
+					return
+				}
+			}
+		}
+
+		tokenStr := c.Query("token")
+		if tokenStr == "" {
+			tokenStr = c.Query("access_token")
+		}
+		if tokenStr == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": gin.H{"code": "UNAUTHORIZED", "message": "missing token or session"},
+			})
+			return
+		}
+
+		token, err := jwt.ParseWithClaims(tokenStr, &Claims{},
+			func(t *jwt.Token) (interface{}, error) {
+				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, jwt.ErrSignatureInvalid
+				}
+				return []byte(secret), nil
+			},
+		)
+		if err != nil || !token.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": gin.H{"code": "UNAUTHORIZED", "message": "invalid or expired token"},
+			})
+			return
+		}
+
+		claims, ok := token.Claims.(*Claims)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": gin.H{"code": "UNAUTHORIZED", "message": "invalid token claims"},
+			})
+			return
+		}
+
+		if querier != nil {
+			var active bool
+			var ok bool
+			if cache != nil {
+				cachedActive, found, err := cache.GetUserActive(c.Request.Context(), claims.UserID)
+				if err == nil && found {
+					active = cachedActive
+					ok = true
+				}
+			}
+			if ok && !active {
+				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+					"error": gin.H{"code": "FORBIDDEN", "message": "user account is inactive"},
+				})
+				return
+			}
+			if !ok {
+				user, err := querier.GetUser(c.Request.Context(), claims.UserID)
+				if err != nil {
+					c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+						"error": gin.H{"code": "UNAUTHORIZED", "message": "invalid token subject"},
+					})
+					return
+				}
+				if cache != nil {
+					_ = cache.SetUserActive(c.Request.Context(), claims.UserID, user.Active, 5*time.Minute)
+				}
+				if !user.Active {
+					c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+						"error": gin.H{"code": "FORBIDDEN", "message": "user account is inactive"},
+					})
+					return
+				}
+			}
+		}
+
+		var roles []model.RoleGrant
+		var okRoles bool
+		if cache != nil {
+			cached, ok, err := cache.GetRoleGrants(c.Request.Context(), claims.UserID)
+			if err == nil && ok {
+				roles = cached
+				okRoles = true
+			}
+		}
+
+		if !okRoles && querier != nil {
+			grants, err := querier.GetActiveRolesForUser(c.Request.Context(), claims.UserID)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+					"error": gin.H{"code": "INTERNAL_ERROR", "message": "failed to load roles"},
+				})
+				return
+			}
+			roles = make([]model.RoleGrant, 0, len(grants))
+			for _, g := range grants {
+				var scopeID *int64
+				if g.ScopeID.Valid {
+					id := g.ScopeID.Int64
+					scopeID = &id
+				}
+				roles = append(roles, model.RoleGrant{
+					Role:      string(g.Role),
+					ScopeType: string(g.ScopeType),
+					ScopeID:   scopeID,
+				})
+			}
+			if cache != nil {
+				_ = cache.SetRoleGrants(c.Request.Context(), claims.UserID, roles, 5*time.Minute)
+			}
+		}
+
+		c.Set("user_id", claims.UserID)
+		if roles == nil {
+			roles = []model.RoleGrant{}
+		}
+		c.Set("roles", roles)
+		c.Next()
+	}
+}

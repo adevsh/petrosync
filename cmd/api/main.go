@@ -95,6 +95,9 @@ func main() {
 	qrHandler := handler.NewQRHandler(querier)
 	tgLinkTokenHandler := handler.NewTelegramLinkTokenHandler(querier)
 	resetPwHandler := handler.NewResetPasswordHandler(querier, tgClient)
+	dashboardHandler := handler.NewDashboardHandler(authService, valkeySvc, querier, cfg.SessionTTL, cfg.AppEnv == "production").
+		WithUserAdmin(userHandler, resetPwHandler).
+		WithWorkflowPages(querier, workflowSvc, tripPhotoSvc, notifications)
 	wsHub := ws.NewHub()
 	wsBridgeCtx, wsBridgeCancel := context.WithCancel(context.Background())
 	wsSub := valkeySvc.Client().B().Psubscribe().Pattern("ws:trip:*").Build()
@@ -109,6 +112,7 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	router := gin.Default()
+	handler.RegisterDashboardRoutes(router, dashboardHandler, valkeySvc)
 
 	// ── Health check ───────────────────────────────────────────────────
 	router.GET("/health", func(c *gin.Context) {
@@ -227,7 +231,7 @@ func main() {
 	}
 
 	wsRoutes := router.Group("/ws")
-	wsRoutes.Use(middleware.JWTQueryAuth(cfg.JWTSecret, querier, valkeySvc))
+	wsRoutes.Use(middleware.SessionOrJWTQueryAuth(cfg.JWTSecret, querier, valkeySvc, valkeySvc))
 	wsRoutes.Use(middleware.DisallowDriver())
 	{
 		wsRoutes.GET("/trips/active", wsHub.HandleUpgrade)

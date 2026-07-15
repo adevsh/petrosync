@@ -1,0 +1,144 @@
+{{ define "page" }}{{ template "base" . }}{{ end }}
+
+{{ define "title" }}Fleet | PetroSync{{ end }}
+
+{{ define "content" }}
+<section class="space-y-6">
+  <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+    <h2 class="text-2xl font-semibold text-slate-950">{{ .Heading }}</h2>
+    <p class="mt-2 max-w-3xl text-sm text-slate-600">{{ .Description }}</p>
+    {{ if .ScopeNotice }}
+      <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        {{ .ScopeNotice }}
+      </div>
+    {{ end }}
+    <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {{ range .Metrics }}
+        <div class="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
+          <p class="text-sm font-medium text-slate-500">{{ .Label }}</p>
+          <p class="mt-3 text-3xl font-semibold text-slate-950">{{ .Value }}</p>
+          <p class="mt-2 text-sm text-slate-600">{{ .Help }}</p>
+        </div>
+      {{ end }}
+    </div>
+  </div>
+
+  <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+    <div class="border-b border-slate-200 px-6 py-4">
+      <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Vehicles</h3>
+      <p class="mt-1 text-sm text-slate-600">Current fleet status with maintenance context.</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+          <tr>
+            <th class="px-6 py-3 font-medium">Vehicle</th>
+            <th class="px-6 py-3 font-medium">Depot</th>
+            <th class="px-6 py-3 font-medium">Capacity</th>
+            <th class="px-6 py-3 font-medium">Inspection</th>
+            <th class="px-6 py-3 font-medium">Maintenance</th>
+            <th class="px-6 py-3 font-medium text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white">
+          {{ if .FleetVehicles }}
+            {{ range .FleetVehicles }}
+              <tr>
+                <td class="px-6 py-4">
+                  <p class="font-medium text-slate-950">{{ .PlateNumber }}</p>
+                  <p class="mt-1 text-sm text-slate-600">{{ .Model }}</p>
+                  <div class="mt-2">
+                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium
+                      {{ if eq .StatusTone "amber" }}bg-amber-50 text-amber-700
+                      {{ else if eq .StatusTone "emerald" }}bg-emerald-50 text-emerald-700
+                      {{ else if eq .StatusTone "rose" }}bg-rose-50 text-rose-700
+                      {{ else }}bg-slate-100 text-slate-700{{ end }}">
+                      {{ .Status }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-slate-600">{{ .Depot }}</td>
+                <td class="px-6 py-4 text-slate-600">{{ .Capacity }}</td>
+                <td class="px-6 py-4 text-slate-600">{{ .NextInspection }}</td>
+                <td class="px-6 py-4">
+                  <span class="{{ if .HasOpenMaintenance }}text-amber-700{{ else }}text-slate-600{{ end }}">{{ .OpenMaintenance }}</span>
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <a href="{{ .DetailURL }}" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Open</a>
+                </td>
+              </tr>
+            {{ end }}
+          {{ else }}
+            <tr>
+              <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-500">No vehicles are available for this scope.</td>
+            </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="grid gap-6 xl:grid-cols-2">
+    <section class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+      <h3 class="text-lg font-semibold text-slate-950">Open Maintenance</h3>
+      <p class="mt-2 text-sm text-slate-600">Current maintenance records that still need follow-through.</p>
+      <div class="mt-6 space-y-4">
+        {{ if .FleetMaintenance }}
+          {{ range .FleetMaintenance }}
+            <article class="rounded-xl border border-slate-200 p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-medium text-slate-950">{{ .Vehicle }}</p>
+                  <p class="mt-1 text-sm text-slate-600">{{ .MaintenanceType }}</p>
+                </div>
+                <p class="text-sm text-slate-500">{{ .Depot }}</p>
+              </div>
+              <p class="mt-3 text-sm text-slate-600">{{ .Description }}</p>
+              <dl class="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                <div>
+                  <dt class="font-medium text-slate-500">Started</dt>
+                  <dd>{{ .StartedAt }}</dd>
+                </div>
+                <div>
+                  <dt class="font-medium text-slate-500">Estimated Return</dt>
+                  <dd>{{ .EstimatedReturn }}</dd>
+                </div>
+              </dl>
+            </article>
+          {{ end }}
+        {{ else }}
+          <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
+            No open maintenance records are visible in this scope.
+          </div>
+        {{ end }}
+      </div>
+    </section>
+
+    <section class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+      <h3 class="text-lg font-semibold text-slate-950">Attention Board</h3>
+      <p class="mt-2 text-sm text-slate-600">Vehicles that need inspection or maintenance follow-up.</p>
+      <div class="mt-6 space-y-4">
+        {{ if .FleetAttention }}
+          {{ range .FleetAttention }}
+            <article class="rounded-xl border border-slate-200 p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-medium text-slate-950">{{ .Vehicle }}</p>
+                  <p class="mt-1 text-sm text-slate-600">{{ .Depot }}</p>
+                </div>
+                <a href="{{ .DetailURL }}" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Open</a>
+              </div>
+              <p class="mt-3 text-sm font-medium text-amber-700">{{ .Notice }}</p>
+              <p class="mt-1 text-sm text-slate-600">{{ .DueDate }}</p>
+            </article>
+          {{ end }}
+        {{ else }}
+          <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
+            No expiring inspection or maintenance alerts are visible in this scope.
+          </div>
+        {{ end }}
+      </div>
+    </section>
+  </section>
+</section>
+{{ end }}

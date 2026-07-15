@@ -1,0 +1,9 @@
+{
+  "name": "petrosync-dashboard",
+  "private": true,
+  "packageManager": "bun@1.2.21",
+  "devDependencies": {
+    "@tailwindcss/cli": "latest",
+    "tailwindcss": "latest"
+  }
+}

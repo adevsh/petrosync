@@ -1,0 +1,151 @@
+{{ define "page" }}{{ template "base" . }}{{ end }}
+
+{{ define "title" }}Delivery Orders | PetroSync{{ end }}
+
+{{ define "content" }}
+<section class="space-y-6">
+  <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+    <h2 class="text-2xl font-semibold text-slate-950">{{ .Heading }}</h2>
+    <p class="mt-2 max-w-3xl text-sm text-slate-600">{{ .Description }}</p>
+    {{ if .ScopeNotice }}
+      <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        {{ .ScopeNotice }}
+      </div>
+    {{ end }}
+  </div>
+
+  {{ if .DeliveryOrders }}
+    {{ template "delivery-order-table" . }}
+  {{ else if .CompanyRows }}
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {{ range .CompanyRows }}
+        <article class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs uppercase tracking-[0.16em] text-slate-500">{{ .RefineryCode }}</p>
+              <h3 class="mt-2 text-lg font-semibold text-slate-950">{{ .FacilityName }}</h3>
+              <p class="mt-1 text-sm text-slate-600">{{ .FacilityCode }}</p>
+            </div>
+            <a href="/facilities/{{ .FacilityID }}/delivery-orders" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Open Queue</a>
+          </div>
+          <dl class="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
+            <div class="rounded-xl bg-slate-50 p-3">
+              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Active Trips</dt>
+              <dd class="mt-2 font-medium text-slate-950">{{ .ActiveTrips }}</dd>
+            </div>
+            <div class="rounded-xl bg-slate-50 p-3">
+              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500">Available Vehicles</dt>
+              <dd class="mt-2 font-medium text-slate-950">{{ .AvailableVehicles }}</dd>
+            </div>
+          </dl>
+        </article>
+      {{ end }}
+    </section>
+  {{ else }}
+    <section class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-sm text-slate-600">
+      No delivery orders are available for this view yet.
+    </section>
+  {{ end }}
+</section>
+{{ end }}
+
+{{ define "delivery-order-table" }}
+<section
+  id="delivery-order-table"
+  class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"
+  {{ if .Facility }}
+    hx-get="/dashboard-partials/facilities/{{ .Facility.FacilityID }}/delivery-orders/table"
+    hx-trigger="every 30s"
+    hx-swap="outerHTML"
+  {{ end }}
+>
+  <div class="flex flex-col gap-3 border-b border-slate-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Queue</h3>
+      <p class="mt-1 text-sm text-slate-600">HTMX keeps this table fresh while approvals update rows in place.</p>
+    </div>
+    {{ if .Facility }}
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950"
+        hx-get="/dashboard-partials/facilities/{{ .Facility.FacilityID }}/delivery-orders/table"
+        hx-target="#delivery-order-table"
+        hx-swap="outerHTML"
+        hx-disabled-elt="this"
+      >
+        <span class="htmx-hide-on-request">Refresh Queue</span>
+        <span class="htmx-indicator">Refreshing...</span>
+      </button>
+    {{ end }}
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+      <thead class="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+        <tr>
+          <th class="px-6 py-3 font-medium">Delivery Order</th>
+          <th class="px-6 py-3 font-medium">Destination</th>
+          <th class="px-6 py-3 font-medium">Scheduled</th>
+          <th class="px-6 py-3 font-medium">Assignment</th>
+          <th class="px-6 py-3 font-medium text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 bg-white">
+        {{ if .DeliveryOrders }}
+          {{ template "delivery-order-row" . }}
+        {{ else }}
+          <tr>
+            <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-500">No delivery orders found for this facility.</td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{ end }}
+
+{{ define "delivery-order-row" }}
+{{ range .DeliveryOrders }}
+  <tr id="delivery-order-row-{{ .ID }}" class="align-top">
+    <td class="px-6 py-4">
+      <p class="font-medium text-slate-950">{{ .DoNumber }}</p>
+      <div class="mt-2">
+        <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium
+          {{ if eq .StatusTone "amber" }}bg-amber-50 text-amber-700
+          {{ else if eq .StatusTone "emerald" }}bg-emerald-50 text-emerald-700
+          {{ else if eq .StatusTone "rose" }}bg-rose-50 text-rose-700
+          {{ else }}bg-slate-100 text-slate-700{{ end }}">
+          {{ .Status }}
+        </span>
+      </div>
+      {{ if .ErrorMessage }}
+        <div class="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{{ .ErrorMessage }}</div>
+      {{ end }}
+    </td>
+    <td class="px-6 py-4 text-slate-600">{{ .Destination }}</td>
+    <td class="px-6 py-4 text-slate-600">{{ .ScheduledDate }}</td>
+    <td class="px-6 py-4 text-slate-600">{{ .Assignment }}</td>
+    <td class="px-6 py-4">
+      <div class="flex flex-wrap justify-end gap-2">
+        {{ if .CanApprove }}
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            hx-post="/dashboard-partials/delivery-orders/{{ .ID }}/approve-row"
+            hx-target="#delivery-order-row-{{ .ID }}"
+            hx-swap="outerHTML"
+            hx-confirm="Approve {{ .DoNumber }}?"
+            hx-disabled-elt="this"
+          >
+            <span class="htmx-hide-on-request">Approve</span>
+            <span class="htmx-indicator">Working...</span>
+          </button>
+        {{ end }}
+        {{ if .CanAssign }}
+          <a href="{{ .DetailURL }}#assignment" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Assign</a>
+        {{ end }}
+        <a href="{{ .DetailURL }}" class="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400 hover:text-slate-950">Open</a>
+      </div>
+    </td>
+  </tr>
+{{ end }}
+{{ end }}

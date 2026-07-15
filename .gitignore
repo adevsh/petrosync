@@ -37,3 +37,4 @@ static/css/dist.css
 
 # Docker
 .env
+.trae/specs/*

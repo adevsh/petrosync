@@ -1,12 +1,12 @@
 # Graph Report - petrosync  (2026-07-15)
 
 ## Corpus Check
-- 181 files · ~135,745 words
+- 181 files · ~134,152 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2042 nodes · 4730 edges · 139 communities (97 shown, 42 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 362 edges (avg confidence: 0.8)
+- 2021 nodes · 4632 edges · 141 communities (101 shown, 40 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 355 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
@@ -150,13 +150,15 @@
 - CompartmentDeliveryStatusT
 - .loadTripForAccess
 - loadSession
+- QRHandler
+- StorageTankHandler
 - .UserDetail
 
 ## God Nodes (most connected - your core abstractions)
-1. `New()` - 67 edges
-2. `fakeDashboardDataQuerier` - 58 edges
+1. `New()` - 66 edges
+2. `fakeDashboardDataQuerier` - 51 edges
 3. `fakeTankWorkflowQuerier` - 47 edges
-4. `dashboardPageData` - 45 edges
+4. `dashboardPageData` - 44 edges
 5. `fakeDashboardWorkflowQuerier` - 41 edges
 6. `main()` - 38 edges
 7. `DeliveryOrder` - 35 edges
@@ -184,43 +186,43 @@
 - **Docker development services** — docker_compose_postgres_service, docker_compose_valkey_service, docker_compose_garage_service [EXTRACTED 1.00]
 - **PetroSync runtime stack** — skill_postgresql_postgis, skill_sqlc_only_data_access, skill_valkey_architecture, skill_garage_object_storage, skill_realtime_trip_map, skill_background_worker_cron [INFERRED 0.85]
 
-## Communities (139 total, 42 thin omitted)
+## Communities (141 total, 40 thin omitted)
 
 ### Community 0 - "User Role Grants"
-Cohesion: 0.08
-Nodes (35): dashboardDeliveryOrderDetailView, dashboardDeliveryOrderItemView, dashboardDeliveryOrderRow, dashboardFleetAttentionView, dashboardFleetMaintenanceView, dashboardFleetVehicleRow, dashboardNotificationService, dashboardPageData (+27 more)
+Cohesion: 0.07
+Nodes (40): dashboardDeliveryOrderDetailView, dashboardDeliveryOrderItemView, dashboardDeliveryOrderRow, dashboardFleetAttentionView, dashboardFleetMaintenanceView, dashboardFleetVehicleRow, dashboardNotificationService, dashboardPageData (+32 more)
 
 ### Community 1 - "Auth API"
-Cohesion: 0.07
-Nodes (24): buildRoleClaims(), generateRefreshToken(), Context, Duration, Int8, Queries, User, NewAuthService() (+16 more)
+Cohesion: 0.20
+Nodes (4): Context, Duration, NewValkeyService(), ValkeyService
 
 ### Community 2 - "Trip Photos"
 Cohesion: 0.06
-Nodes (34): CreateTripPhotoParams, ListPhotosByTripAndCompartmentParams, ListPhotosByTripAndEventParams, PhotoEventT, TripPhoto, AllPhotoEventTValues(), Context, Queries (+26 more)
+Nodes (36): CreateTripPhotoParams, ListPhotosByTripAndCompartmentParams, ListPhotosByTripAndEventParams, PhotoEventT, TripPhoto, fakeDashboardTripPhotoLister, AllPhotoEventTValues(), Context (+28 more)
 
 ### Community 3 - "Weight Bridge Approvals"
 Cohesion: 0.12
-Nodes (21): ApprovalStatusT, ApproveWeightBridgeReadingParams, CreateWeightBridgeReadingParams, EscalateWeightBridgeReadingParams, ListEscalatedApprovalsRow, ListOverduePendingManualApprovalsRow, ListPendingManualApprovalsRow, ListUsersWithCompanyRoleRow (+13 more)
+Nodes (20): ApprovalStatusT, ApproveWeightBridgeReadingParams, CreateWeightBridgeReadingParams, EscalateWeightBridgeReadingParams, ListEscalatedApprovalsRow, ListOverduePendingManualApprovalsRow, ListPendingManualApprovalsRow, MeasurementMethodT (+12 more)
 
 ### Community 4 - "Trip Lifecycle"
-Cohesion: 0.14
-Nodes (7): AppendTripRoutePointParams, ListTripsByDriverParams, ListTripsByVehicleParams, Trip, UpdateTripStatusParams, Context, Queries
+Cohesion: 0.16
+Nodes (6): AppendTripRoutePointParams, ListTripsByDriverParams, ListTripsByVehicleParams, Trip, Context, Queries
 
 ### Community 5 - "Vehicle Inventory"
-Cohesion: 0.11
-Nodes (29): CreateVehicleParams, GetVehicleByPlateRow, GetVehicleRow, ListDispatchCandidateVehiclesParams, ListDispatchCandidateVehiclesRow, ListVehiclesByDepotRow, ListVehiclesByStatusAndDepotParams, ListVehiclesByStatusAndDepotRow (+21 more)
+Cohesion: 0.21
+Nodes (24): CreateVehicleParams, GetVehicleByPlateRow, GetVehicleRow, ListDispatchCandidateVehiclesRow, ListVehiclesByDepotRow, ListVehiclesByStatusAndDepotParams, ListVehiclesByStatusAndDepotRow, ListVehiclesByStatusAndFacilityParams (+16 more)
 
 ### Community 6 - "Facility Topology"
-Cohesion: 0.17
-Nodes (13): CreateFacilityParams, GetFacilityByCodeRow, GetFacilityRow, GetPrimaryFacilityByRefineryRow, ListAllActiveFacilitiesRow, ListFacilitiesByRefineryRow, UpdateFacilityLocationParams, UpdateFacilityParams (+5 more)
+Cohesion: 0.10
+Nodes (24): CreateDepotParams, CreateFacilityParams, GetDepotByCodeRow, GetDepotRow, GetFacilityByCodeRow, GetFacilityRow, GetPrimaryFacilityByRefineryRow, ListAllActiveDepotsRow (+16 more)
 
 ### Community 7 - "GPS Event Partitions"
-Cohesion: 0.15
-Nodes (45): GpsEvent, GpsEvents202501, GpsEvents202502, GpsEvents202503, GpsEvents202504, GpsEvents202505, GpsEvents202506, GpsEvents202507 (+37 more)
+Cohesion: 0.14
+Nodes (48): GpsEvent, GpsEvents202501, GpsEvents202502, GpsEvents202503, GpsEvents202504, GpsEvents202505, GpsEvents202506, GpsEvents202507 (+40 more)
 
 ### Community 8 - "Telegram Link Tokens"
-Cohesion: 0.23
-Nodes (5): CreateTelegramLinkTokenParams, fakeTelegramLinkQuerier, Context, Queries, Context
+Cohesion: 0.13
+Nodes (12): CreateTelegramLinkTokenParams, fakeTelegramLinkQuerier, TelegramLinkQuerier, TelegramLinkTokenHandler, telegramLinkTokenResponse, Context, Queries, Time (+4 more)
 
 ### Community 9 - "Nullable DB Types"
 Cohesion: 0.07
@@ -231,8 +233,8 @@ Cohesion: 0.09
 Nodes (28): AsyncWriter, blockingSink, Sink, InsertAuditLogParams, InsertAuditLogRow, ListAuditLogByActionParams, ListAuditLogByActionRow, ListAuditLogByEntityParams (+20 more)
 
 ### Community 11 - "Trip Events"
-Cohesion: 0.14
-Nodes (13): GetLatestTripEventByTypeParams, InsertTripEventParams, ListTripEventsByTripAndTypeParams, TripEvent, TripEventTypeT, AllTripEventTypeTValues(), RawMessage, Context (+5 more)
+Cohesion: 0.07
+Nodes (28): GetLatestTripEventByTypeParams, InsertTripEventParams, ListTripEventsByTripAndTypeParams, Store, TankWorkflowQuerier, TankWorkflowStore, TripEvent, TripEventTypeT (+20 more)
 
 ### Community 12 - "GPS Storage"
 Cohesion: 0.10
@@ -240,38 +242,38 @@ Nodes (25): GetLatestGPSEventByTripRow, InsertGPSEventParams, InsertGPSEventRow,
 
 ### Community 13 - "Notification Logging"
 Cohesion: 0.06
-Nodes (51): main(), Config, Duration, Load(), displayPGInt8(), Context, Int8, ignoreNotificationSendError() (+43 more)
+Nodes (48): main(), displayPGInt8(), Context, Int8, ignoreNotificationSendError(), int64Ptr(), NewNotificationCoordinator(), Context (+40 more)
 
 ### Community 14 - "Compartment Deliveries"
-Cohesion: 0.09
-Nodes (19): CompartmentDeliveryStatusT, CreateCompartmentDeliveryParams, GetCompartmentDeliveryByTripAndCompartmentParams, GetTripVarianceSummaryRow, ListCompartmentDeliveriesByTripRow, ListDisputedDeliveriesRow, ListTripDeliveredVolumeByFuelRow, NullMeasurementMethodT (+11 more)
+Cohesion: 0.10
+Nodes (20): CompartmentDeliveryStatusT, CreateCompartmentDeliveryParams, GetCompartmentDeliveryByTripAndCompartmentParams, GetTripVarianceSummaryRow, ListCompartmentDeliveriesByTripRow, ListDisputedDeliveriesRow, ListTripDeliveredVolumeByFuelRow, ListTripLoadedVolumeByFuelRow (+12 more)
 
 ### Community 15 - "User Admin APIs"
-Cohesion: 0.13
-Nodes (26): createUserRequest, NotifyReset, ResetPasswordHandler, resetPasswordRequest, roleChangeRequest, roleGrantResponse, updateUserRequest, UserCache (+18 more)
+Cohesion: 0.14
+Nodes (27): createUserRequest, NotifyReset, ResetPasswordHandler, resetPasswordRequest, roleChangeRequest, roleGrantResponse, updateUserRequest, UserCache (+19 more)
 
 ### Community 16 - "Refinery Fuel Setup"
-Cohesion: 0.11
-Nodes (16): CreateFuelTypeParams, CreateRefineryParams, FuelCategoryT, FuelType, Refinery, UpdateFuelTypeParams, UpdateRefineryParams, Context (+8 more)
+Cohesion: 0.19
+Nodes (9): CreateFuelTypeParams, FuelCategoryT, FuelType, UpdateFuelTypeParams, Context, Queries, Int2, Numeric (+1 more)
 
 ### Community 17 - "Delivery Orders"
-Cohesion: 0.08
-Nodes (27): ApproveDeliveryOrderParams, AssignVehicleAndDriverToDOParams, CreateDeliveryOrderParams, DeliveryOrder, DestinationTypeT, DoStatusT, ListDOsByStatusRow, ListDOsForDispatchQueueRow (+19 more)
+Cohesion: 0.12
+Nodes (18): ApproveDeliveryOrderParams, AssignVehicleAndDriverToDOParams, CreateDeliveryOrderParams, DeliveryOrder, DestinationTypeT, DoStatusT, ListDOsByStatusRow, ListDOsForDispatchQueueRow (+10 more)
 
 ### Community 18 - "Station Management"
-Cohesion: 0.05
-Nodes (44): CompleteMaintenanceRecordParams, CreateMaintenanceRecordParams, CreateStationParams, GetCompanyWideDashboardSummaryRow, GetDriverComplianceSummaryParams, GetDriverComplianceSummaryRow, GetFacilityDashboardSummaryRow, GetMonthlyDeliveryStatsByFacilityParams (+36 more)
+Cohesion: 0.20
+Nodes (15): CreateStationParams, GetStationByCodeRow, GetStationRow, ListAllActiveStationsByRefineryScopeRow, ListAllActiveStationsByStationScopeRow, ListAllActiveStationsRow, ListStationsByFacilityRow, ListStationsByRegionRow (+7 more)
 
 ### Community 19 - "Station Tanks"
-Cohesion: 0.16
+Cohesion: 0.17
 Nodes (13): CreateStationTankParams, GetStationTankByFuelParams, ListStationTanksBelowReorderThresholdRow, StationTank, UpdateDipReadingParams, UpdateStationTankReorderThresholdParams, UpdateStationTankVolumeAfterDeliveryParams, UpdateStationTankVolumeParams (+5 more)
 
 ### Community 20 - "Dashboard Analytics"
-Cohesion: 0.16
-Nodes (11): GetTripWithDetailsRow, canViewFacility(), formatDate(), formatInt8(), formatNumeric(), Context, Date, DashboardHandler (+3 more)
+Cohesion: 0.21
+Nodes (6): dashboardLookupCache, canViewFacility(), Context, DashboardHandler, newDashboardLookupCache(), tripDestinationLabel()
 
 ### Community 21 - "Driver Operations"
-Cohesion: 0.19
+Cohesion: 0.21
 Nodes (14): CreateDriverParams, GetDriverByUserIDRow, GetDriverRow, ListAvailableDriversForDispatchRow, ListDriversByDepotRow, ListDriversWithExpiringLicenseRow, UpdateDriverHomeDepotParams, UpdateDriverLicenseParams (+6 more)
 
 ### Community 22 - "Mutating Handlers"
@@ -283,23 +285,23 @@ Cohesion: 0.29
 Nodes (7): Docker development stack, Garage service, PostgreSQL PostGIS service, Valkey service, Garage object storage, PostgreSQL with PostGIS, Valkey session and pub-sub architecture
 
 ### Community 24 - "Storage Tanks"
-Cohesion: 0.16
-Nodes (12): CreateStorageTankParams, CreditStorageTankVolumeParams, DeductStorageTankVolumeParams, FacilityStorageTank, GetStorageTankAvailableVolumeRow, GetStorageTankByFacilityAndFuelParams, ReleaseStorageTankReservationParams, ReserveStorageTankVolumeParams (+4 more)
+Cohesion: 0.19
+Nodes (11): CreateStorageTankParams, CreditStorageTankVolumeParams, DeductStorageTankVolumeParams, GetStorageTankAvailableVolumeRow, GetStorageTankByFacilityAndFuelParams, ReleaseStorageTankReservationParams, ReserveStorageTankVolumeParams, UpdateStorageTankVolumeParams (+3 more)
 
 ### Community 25 - "Workflow Tests"
-Cohesion: 0.24
-Nodes (6): GetMandatoryPhotoCheckByTripRow, ListTripLoadedVolumeByFuelRow, Context, Int8, fakeTankWorkflowQuerier, fakeTankWorkflowStore
+Cohesion: 0.17
+Nodes (6): FacilityStorageTank, GetMandatoryPhotoCheckByTripRow, Context, Int8, fakeTankWorkflowQuerier, fakeTankWorkflowStore
 
 ### Community 26 - "Workflow Wiring"
 Cohesion: 0.24
 Nodes (20): NewWorkflowService(), Numeric, T, numericInt64(), numericInt64Exp(), TestWorkflowService_ApproveDeliveryOrder_InsufficientStock(), TestWorkflowService_ApproveDeliveryOrder_ReservesPerItem(), TestWorkflowService_CancelDeliveryOrder_ReleasesOnlyWhenReserved() (+12 more)
 
 ### Community 28 - "System Settings"
-Cohesion: 0.20
-Nodes (9): DeleteFacilitySettingParams, GetEffectiveSettingParams, GetFacilitySettingParams, UpsertFacilitySettingParams, UpsertGlobalSettingParams, Context, Queries, Int8 (+1 more)
+Cohesion: 0.22
+Nodes (10): DeleteFacilitySettingParams, GetEffectiveSettingParams, GetFacilitySettingParams, SystemSetting, UpsertFacilitySettingParams, UpsertGlobalSettingParams, Context, Queries (+2 more)
 
 ### Community 29 - "DO Item Mapping"
-Cohesion: 0.19
+Cohesion: 0.20
 Nodes (10): AssignCompartmentToDOItemParams, CreateDeliveryOrderItemParams, DeliveryOrderItem, ListDOItemsByDORow, UpdateDOItemAllocatedVolumeParams, Context, Queries, Int8 (+2 more)
 
 ### Community 30 - "Loading Bays"
@@ -311,36 +313,36 @@ Cohesion: 0.19
 Nodes (10): CreateTripDocumentParams, DocumentTypeT, GetTripDocumentByTypeParams, TripDocument, UpdateTripDocumentKeyParams, AllDocumentTypeTValues(), Context, Queries (+2 more)
 
 ### Community 32 - "Compartment Seals"
-Cohesion: 0.13
-Nodes (26): dashboardActiveTrip, dashboardAuthService, DashboardBreadcrumb, dashboardCompanyFacilitySummary, dashboardDataQuerier, dashboardFacilitySummary, dashboardLiveMap, dashboardMetric (+18 more)
+Cohesion: 0.12
+Nodes (27): dashboardActiveTrip, dashboardAuthService, DashboardBreadcrumb, dashboardCompanyFacilitySummary, dashboardDataQuerier, dashboardFacilitySummary, dashboardLiveMap, dashboardMetric (+19 more)
 
 ### Community 33 - "Vehicle Compartments"
-Cohesion: 0.20
-Nodes (9): CreateCompartmentParams, GetTotalCapacityByVehicleRow, ListCompartmentsByVehicleAndFuelParams, UpdateCompartmentFuelTypeParams, VehicleCompartment, Context, Queries, Numeric (+1 more)
+Cohesion: 0.21
+Nodes (8): CreateCompartmentParams, GetTotalCapacityByVehicleRow, ListCompartmentsByVehicleAndFuelParams, UpdateCompartmentFuelTypeParams, Context, Queries, Numeric, Text
 
 ### Community 34 - "API Entry Auth"
-Cohesion: 0.22
-Nodes (8): CreateDepotParams, GetDepotByCodeRow, ListAllActiveDepotsRow, ListDepotsByFacilityRow, UpdateDepotParams, Context, Queries, Timestamptz
+Cohesion: 0.25
+Nodes (5): Conn, Context, NewHub(), RWMutex, Hub
 
 ### Community 35 - "Vehicle Maintenance"
-Cohesion: 0.23
-Nodes (3): Context, Queries, User
+Cohesion: 0.24
+Nodes (8): CompleteMaintenanceRecordParams, CreateMaintenanceRecordParams, ListAllOpenMaintenanceRow, Context, Queries, Int8, Text, Timestamptz
 
 ### Community 36 - "Route Deviations"
 Cohesion: 0.09
 Nodes (25): CreateDeviationEventParams, ListActiveTripsOffRouteRow, ListUnnotifiedDeviationsAboveThresholdRow, RouteDeviationEvent, Int4, Context, Queries, Decimal (+17 more)
 
 ### Community 37 - "Valkey WS Bridge"
-Cohesion: 0.15
-Nodes (12): Completed, Context, RunValkeyBridge(), Completed, Context, T, TestRunValkeyBridge_BroadcastsMessages(), PubSubMessage (+4 more)
+Cohesion: 0.32
+Nodes (7): Completed, Context, RunValkeyBridge(), T, TestRunValkeyBridge_BroadcastsMessages(), PubSubReceiver, TextBroadcaster
 
 ### Community 38 - "Telegram Link Tests"
-Cohesion: 0.24
-Nodes (6): fakeLinkQuerier, fakeLinkStore, fakeReplier, Context, Int8, TelegramLinkQuerier
+Cohesion: 0.19
+Nodes (9): fakeLinkQuerier, fakeLinkStore, fakeReplier, Context, Int8, T, TelegramLinkQuerier, TestHandleUpdate_LinkSuccess() (+1 more)
 
 ### Community 39 - "Core Models"
-Cohesion: 0.17
-Nodes (14): AuditLog, Driver, GasStation, NotificationLog, NotificationTypeT, SystemSetting, User, Vehicle (+6 more)
+Cohesion: 0.14
+Nodes (16): AuditLog, Driver, GasStation, NotificationLog, NotificationTypeT, StationQrCode, User, Vehicle (+8 more)
 
 ### Community 40 - "Trip Mobile APIs"
 Cohesion: 0.28
@@ -351,16 +353,16 @@ Cohesion: 0.31
 Nodes (11): DisallowDriver(), HandlerFunc, RequiredRole(), RoleRank(), T, TestDisallowDriver_AllowsMixedRoleUser(), TestDisallowDriver_BlocksDriverOnlyUser(), TestRequiredRole_HierarchyAndScopeMatch() (+3 more)
 
 ### Community 42 - "Telegram Bot Runtime"
-Cohesion: 0.27
-Nodes (11): Replier, TelegramBot, Context, HandleUpdate(), NewTelegramBot(), T, TestHandleUpdate_LinkSuccess(), TestHandleUpdate_LinkUsage() (+3 more)
+Cohesion: 0.48
+Nodes (5): Replier, TelegramBot, Context, HandleUpdate(), NewTelegramBot()
 
 ### Community 43 - "Station QR Codes"
 Cohesion: 0.27
-Nodes (6): CreateStationQRCodeParams, GetStationByQRPayloadRow, StationQrCode, Context, Queries, Text
+Nodes (5): CreateStationQRCodeParams, GetStationByQRPayloadRow, Context, Queries, Text
 
 ### Community 44 - "Telegram Link Store"
-Cohesion: 0.36
-Nodes (6): Context, Pool, Queries, NewPgxTelegramLinkStore(), PgxTelegramLinkStore, TelegramLinkQuerier
+Cohesion: 0.30
+Nodes (9): Context, Pool, Queries, NewPgxTelegramLinkStore(), NewTelegramLinkService(), PgxTelegramLinkStore, TelegramLinkQuerier, TelegramLinkService (+1 more)
 
 ### Community 45 - "Station Whitelist"
 Cohesion: 0.29
@@ -383,32 +385,32 @@ Cohesion: 0.15
 Nodes (13): CountNotificationsByTypeAndTripParams, InsertNotificationParams, ListNotificationsByRecipientParams, Context, Queries, Int8, Text, Context (+5 more)
 
 ### Community 50 - "Refinery Handler"
-Cohesion: 0.29
-Nodes (6): GetValidTelegramLinkTokenRow, Int8, Timestamptz, Context, Int8, fakeTelegramLinkQuerier
+Cohesion: 0.15
+Nodes (12): GetValidTelegramLinkTokenRow, fakeTelegramLinkQuerier, Int8, Timestamptz, Context, Int8, T, TelegramLinkQuerier (+4 more)
 
 ### Community 52 - "Transaction Store"
-Cohesion: 0.14
-Nodes (14): CheckUserHasCompanyRoleParams, CheckUserHasRoleInScopeParams, GetActiveRoleForUserAndScopeParams, ListUsersWithRoleInScopeParams, ListUsersWithRoleInScopeRow, RevokeRoleParams, RoleScopeT, UserRoleT (+6 more)
+Cohesion: 0.06
+Nodes (33): CheckUserHasCompanyRoleParams, CheckUserHasRoleInScopeParams, GetActiveRoleForUserAndScopeParams, GrantRoleParams, ListUsersWithCompanyRoleRow, ListUsersWithRoleInScopeParams, ListUsersWithRoleInScopeRow, RevokeRoleParams (+25 more)
 
 ### Community 53 - "Station Handler"
 Cohesion: 0.22
 Nodes (7): StationHandler, floatToNumeric(), Numeric, numericToFloat64(), Context, Queries, NewStationHandler()
 
 ### Community 54 - "Telegram Client"
-Cohesion: 0.28
-Nodes (7): CreateUserParams, CreateUserRow, GrantRoleParams, UserRoleGrant, fakeDashboardUserQuerier, fakeUserQuerier, fakeRoleQuerier
+Cohesion: 0.21
+Nodes (10): Context, User, NewClient(), Chat, Client, getUpdatesResponse, Message, sendMessageResponse (+2 more)
 
 ### Community 55 - "API Config Bootstrap"
-Cohesion: 0.20
-Nodes (14): dashboardLookupCache, dashboardStationRow, dashboardTripRow, formatTripMoment(), Context, DashboardHandler, buildTripRow(), dashboardBestRole() (+6 more)
+Cohesion: 0.18
+Nodes (14): dashboardStationRow, fleetAttentionDate(), formatTripMoment(), Context, DashboardHandler, dashboardBestRole(), formatDate(), formatNumeric() (+6 more)
 
 ### Community 56 - "QR Validation"
-Cohesion: 0.21
-Nodes (6): GetUserRow, UpdateUserPasswordParams, fakePasswordStore, fakeUserCache, Context, User
+Cohesion: 0.16
+Nodes (14): GetDriverComplianceSummaryParams, GetDriverComplianceSummaryRow, GetMonthlyDeliveryStatsByFacilityParams, GetMonthlyDeliveryStatsByFacilityRow, GetStationInventorySnapshotRow, ListPendingWeightBridgeApprovalsByFacilityRow, Context, Queries (+6 more)
 
 ### Community 57 - "Storage Tank Handler"
-Cohesion: 0.15
-Nodes (15): DBTX, GetDepotRow, fakeResetNotifier, Queries, Queries, New(), T, TestResetPasswordHandler_HidesTempPasswordWhenTelegramDelivered() (+7 more)
+Cohesion: 0.50
+Nodes (3): DBTX, Queries, Tx
 
 ### Community 58 - "SQLC DB Core"
 Cohesion: 0.08
@@ -418,37 +420,41 @@ Nodes (24): For /graphify add and --watch, For /graphify query, For the commit h
 Cohesion: 0.60
 Nodes (3): Region, Context, Queries
 
+### Community 60 - "User Management Tests"
+Cohesion: 0.09
+Nodes (12): GetCompanyWideDashboardSummaryRow, GetFacilityDashboardSummaryRow, ListSealsByTripRow, ListVehiclesWithMaintenanceOrExpiryDueRow, fakeDashboardDataQuerier, fakeDashboardWorkflowQuerier, Timestamptz, Queries (+4 more)
+
 ### Community 62 - "Session Auth"
-Cohesion: 0.19
-Nodes (36): fakeDashboardWorkflowService, Decimal, Engine, Numeric, T, mustDecimalFromString(), newDashboardTestRouter(), newDashboardTestRouterWithUserAdmin() (+28 more)
+Cohesion: 0.16
+Nodes (32): fakeDashboardAuthService, fakeDashboardSessionStore, Decimal, Duration, Engine, Numeric, T, mustDecimalFromString() (+24 more)
 
 ### Community 68 - "PetroSync — SKILL.md"
 Cohesion: 0.11
 Nodes (17): 12. Telegram Bot Rules, 13. Object Storage Rules — Garage, 15. Real-time WebSocket Architecture, 16. Background Worker Architecture, 18. Phase 2 — Safety Layer, 19. Phase 3 — Intelligence, 1. Project Identity, 20. Phase 4 — Enterprise (+9 more)
 
 ### Community 69 - "Context"
-Cohesion: 0.17
-Nodes (12): CompartmentSeal, GetSealByTripAndCompartmentParams, IssueSealParams, ListSealsByTripRow, NullSealStatusT, RecordSealBreakParams, VerifySealParams, Context (+4 more)
+Cohesion: 0.18
+Nodes (10): CompartmentSeal, GetSealByTripAndCompartmentParams, IssueSealParams, NullSealStatusT, RecordSealBreakParams, VerifySealParams, Context, Queries (+2 more)
 
 ### Community 70 - "users.sql.go"
-Cohesion: 0.12
-Nodes (18): dashboardNavItem, canManageUsers(), canViewFleet(), canViewStation(), canViewStationPages(), dashboardNav(), HandlerFunc, canViewDeliveryOrderPages() (+10 more)
+Cohesion: 0.16
+Nodes (15): dashboardNavItem, canManageUsers(), canViewFleet(), canViewStation(), canViewStationPages(), dashboardNav(), HandlerFunc, canViewDeliveryOrderPages() (+7 more)
 
 ### Community 71 - "UserRoleGrant"
-Cohesion: 0.31
-Nodes (7): TelegramLinkQuerier, TelegramLinkTokenHandler, telegramLinkTokenResponse, Time, NewTelegramLinkTokenHandler(), T, TestTelegramLinkTokenHandler_CreateLinkToken()
+Cohesion: 0.36
+Nodes (4): RefineryHandler, Context, Queries, NewRefineryHandler()
 
 ### Community 72 - "Context"
-Cohesion: 0.18
-Nodes (10): GetUserByTelegramIDRow, LinkTelegramAccountParams, ListActiveUsersRow, ListUsersRow, SetUserActiveParams, SetUserActiveRow, UpdateUserParams, UpdateUserRow (+2 more)
+Cohesion: 0.07
+Nodes (29): CreateUserParams, CreateUserRow, GetUserByTelegramIDRow, GetUserRow, LinkTelegramAccountParams, ListActiveUsersRow, ListUsersRow, SetUserActiveParams (+21 more)
 
 ### Community 73 - "SetAuditEntity"
-Cohesion: 0.29
-Nodes (6): fakeTelegramLinkQuerier, T, TelegramLinkQuerier, TestTelegramLinkService_LinkByToken_InvalidToken(), TestTelegramLinkService_LinkByToken_Success(), fakeTelegramLinkStore
+Cohesion: 0.18
+Nodes (4): ListDispatchCandidateVehiclesParams, UpdateVehicleLocationParams, Context, Queries
 
 ### Community 74 - "Context"
-Cohesion: 0.05
-Nodes (47): main(), Conn, Store, QRHandler, qrValidateReq, RefineryHandler, StorageTankHandler, Context (+39 more)
+Cohesion: 0.18
+Nodes (23): HandlerFunc, JWTAuth(), JWTQueryAuth(), SessionOrJWTQueryAuth(), T, makeToken(), TestJWTAuth_BlocksInactiveUsers(), TestJWTAuth_LoadsFromDBWhenCacheMiss() (+15 more)
 
 ### Community 75 - "10. Business Logic Rules by Domain"
 Cohesion: 0.20
@@ -467,8 +473,8 @@ Cohesion: 0.22
 Nodes (8): graphify reference: extra exports and benchmark, Step 6b - Wiki (only if --wiki flag), Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag), Step 7a - FalkorDB export (only if --falkordb or --falkordb-push flag), Step 7b - SVG export (only if --svg flag), Step 7c - GraphML export (only if --graphml flag), Step 7d - MCP server (only if --mcp flag), Step 8 - Token reduction benchmark (only if total_words > 5000)
 
 ### Community 79 - "auth_test.go"
-Cohesion: 0.13
-Nodes (19): CreateTripParams, GetTripByDORow, GetTripRow, ListActiveTripsByDriverUserScopeRow, ListActiveTripsByFacilityScopeRow, ListActiveTripsByRefineryScopeRow, ListActiveTripsByStationScopeRow, ListActiveTripsRow (+11 more)
+Cohesion: 0.29
+Nodes (16): CreateTripParams, GetTripByDORow, GetTripRow, GetTripWithDetailsRow, ListActiveTripsByDriverUserScopeRow, ListActiveTripsByFacilityScopeRow, ListActiveTripsByRefineryScopeRow, ListActiveTripsByStationScopeRow (+8 more)
 
 ### Community 80 - "6. Mobile API Contract"
 Cohesion: 0.29
@@ -551,16 +557,28 @@ Cohesion: 0.29
 Nodes (7): escapeHTML(), formatLastGPS(), formatSpeed(), initMap(), parseSeed(), popupHTML(), updateTripCard()
 
 ### Community 134 - "GarageStorage"
-Cohesion: 0.50
-Nodes (3): fakeDashboardAuthService, Duration, DashboardLoginResult
+Cohesion: 0.31
+Nodes (6): CreateRefineryParams, Refinery, UpdateRefineryParams, Context, Queries, Int2
+
+### Community 135 - "CompartmentDeliveryStatusT"
+Cohesion: 0.29
+Nodes (5): Completed, Context, PubSubMessage, fakePubSubReceiver, fakeTextBroadcaster
+
+### Community 136 - ".loadTripForAccess"
+Cohesion: 0.40
+Nodes (4): main(), Config, Duration, Load()
 
 ### Community 137 - "loadSession"
 Cohesion: 0.40
 Nodes (5): dashboardFleetVehicleSummary, Date, Int8, Numeric, Text
 
-### Community 140 - ".UserDetail"
+### Community 138 - "QRHandler"
 Cohesion: 0.38
-Nodes (4): dashboardScopeReference, dashboardScopeReferenceSection, Context, DashboardHandler
+Nodes (5): QRHandler, qrValidateReq, Context, Queries, NewQRHandler()
+
+### Community 139 - "StorageTankHandler"
+Cohesion: 0.43
+Nodes (4): StorageTankHandler, Context, Queries, NewStorageTankHandler()
 
 ## Ambiguous Edges - Review These
 - `schema.sql DDL source of truth` → `sql/migrations schema input`  [AMBIGUOUS]
@@ -571,7 +589,7 @@ Nodes (4): dashboardScopeReference, dashboardScopeReferenceSection, Context, Das
 ## Knowledge Gaps
 - **182 isolated node(s):** `garage-init.sh script`, `github.com/adevsh/petrosync`, `StationFacilityWhitelist`, `Querier`, `gpsEvent` (+177 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **42 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **40 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -580,13 +598,13 @@ _Questions this graph is uniquely positioned to answer:_
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
 - **What is the exact relationship between `build-api trigger paths` and `documented build-api trigger paths`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `New()` connect `Storage Tank Handler` to `Auth API`, `Vehicle Inventory`, `Facility Topology`, `Audit Logging`, `GPS Storage`, `Notification Logging`, `Station Management`, `Dashboard Analytics`, `Driver Operations`, `Workflow Wiring`, `RBAC Middleware`, `WebSocket Hub`, `API Config Bootstrap`, `QR Validation`, `Session Auth`, `UserRoleGrant`, `Context`, `Context`, `auth_test.go`?**
-  _High betweenness centrality (0.160) - this node is a cross-community bridge._
-- **Why does `main()` connect `Context` to `Auth API`, `Trip Photos`, `Audit Logging`, `GPS Storage`, `Notification Logging`, `User Admin APIs`, `Mutating Handlers`, `Workflow Wiring`, `Compartment Seals`, `Valkey WS Bridge`, `Trip Mobile APIs`, `RBAC Middleware`, `Telegram Bot Runtime`, `Telegram Link Store`, `Vehicle Handler`, `Driver Handler`, `Station Handler`, `Storage Tank Handler`, `Session Auth`, `UserRoleGrant`, `GarageStorage`?**
-  _High betweenness centrality (0.132) - this node is a cross-community bridge._
-- **Why does `fakeDashboardDataQuerier` connect `Station Management` to `Vehicle Compartments`, `API Entry Auth`, `Trip Lifecycle`, `Vehicle Inventory`, `Facility Topology`, `auth_test.go`, `Refinery Fuel Setup`, `Station Tanks`, `Storage Tank Handler`, `Session Auth`?**
-  _High betweenness centrality (0.077) - this node is a cross-community bridge._
-- **Are the 64 inferred relationships involving `New()` (e.g. with `main()` and `main()`) actually correct?**
-  _`New()` has 64 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `New()` connect `User Management Tests` to `User Role Grants`, `Facility Topology`, `.loadTripForAccess`, `Context`, `Audit Logging`, `Trip Events`, `GPS Storage`, `Notification Logging`, `Telegram Link Tokens`, `Context`, `RBAC Middleware`, `WebSocket Hub`, `Dashboard Analytics`, `Transaction Store`, `API Config Bootstrap`, `Storage Tank Handler`, `Workflow Wiring`, `Session Auth`?**
+  _High betweenness centrality (0.183) - this node is a cross-community bridge._
+- **Why does `main()` connect `.loadTripForAccess` to `Auth API`, `Trip Photos`, `Telegram Link Tokens`, `Audit Logging`, `Trip Events`, `GPS Storage`, `QRHandler`, `StorageTankHandler`, `User Admin APIs`, `Notification Logging`, `Mutating Handlers`, `Workflow Wiring`, `Compartment Seals`, `API Entry Auth`, `Valkey WS Bridge`, `Trip Mobile APIs`, `RBAC Middleware`, `Telegram Bot Runtime`, `Telegram Link Store`, `Vehicle Handler`, `Driver Handler`, `Transaction Store`, `Station Handler`, `Telegram Client`, `User Management Tests`, `UserRoleGrant`, `Context`, `GarageStorage`?**
+  _High betweenness centrality (0.140) - this node is a cross-community bridge._
+- **Why does `fakeDashboardDataQuerier` connect `User Management Tests` to `Vehicle Maintenance`, `Trip Lifecycle`, `Vehicle Inventory`, `Facility Topology`, `GPS Event Partitions`, `Core Models`, `auth_test.go`, `Station Management`, `Station Tanks`, `QR Validation`, `Session Auth`?**
+  _High betweenness centrality (0.072) - this node is a cross-community bridge._
+- **Are the 63 inferred relationships involving `New()` (e.g. with `main()` and `main()`) actually correct?**
+  _`New()` has 63 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `garage-init.sh script`, `github.com/adevsh/petrosync`, `StationFacilityWhitelist` to the rest of the system?**
   _182 weakly-connected nodes found - possible documentation gaps or missing edges._

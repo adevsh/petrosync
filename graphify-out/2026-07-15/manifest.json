@@ -1,7 +1,7 @@
 {
   "cmd/api/main.go": {
-    "mtime": 1784086468.4161644,
-    "ast_hash": "0eeebabf1306dda65ddea2c08fe18232",
+    "mtime": 1784084737.7709398,
+    "ast_hash": "aade8d94b2b761cc65911184ca39c2bc",
     "semantic_hash": ""
   },
   "cmd/worker/main.go": {
@@ -845,13 +845,13 @@
     "semantic_hash": "a0c872c80dddff88ac7bc46a5a9eec65"
   },
   "internal/handler/dashboard.go": {
-    "mtime": 1784086430.5839381,
-    "ast_hash": "599436c968161425f7213fcce9291676",
+    "mtime": 1784086059.2740357,
+    "ast_hash": "51e784ec627a0af73ed5e2b10967cfb4",
     "semantic_hash": ""
   },
   "internal/handler/dashboard_test.go": {
-    "mtime": 1784086541.8488877,
-    "ast_hash": "fe338e5f8f1f6d95f17f4380d7af2d27",
+    "mtime": 1784086059.276789,
+    "ast_hash": "98c570d75550ad2386188c0d9b0aed6d",
     "semantic_hash": ""
   },
   "internal/service/notification_coordinator.go": {
@@ -950,13 +950,13 @@
     "semantic_hash": ""
   },
   "internal/handler/dashboard_users.go": {
-    "mtime": 1784086549.2763286,
-    "ast_hash": "f6d425239c01c69fd3c4bfdcde1258f2",
+    "mtime": 1784083206.7972887,
+    "ast_hash": "4ddfc83e8ec997d17e93e61024267621",
     "semantic_hash": ""
   },
   "templates/pages/user_detail.html": {
-    "mtime": 1784086566.9331417,
-    "ast_hash": "f38f8fa91821d799f432c35343fe4360",
+    "mtime": 1784083291.0818965,
+    "ast_hash": "669568c3a382b9e7c6408b448d620df1",
     "semantic_hash": ""
   },
   "templates/pages/user_new.html": {

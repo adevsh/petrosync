@@ -137,5 +137,7 @@
   "135": "CompartmentDeliveryStatusT",
   "136": ".loadTripForAccess",
   "137": "loadSession",
+  "138": "QRHandler",
+  "139": "StorageTankHandler",
   "140": ".UserDetail"
 }

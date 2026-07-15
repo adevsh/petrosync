@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 const countTripDeviations = `-- name: CountTripDeviations :one
@@ -84,6 +85,68 @@ func (q *Queries) GetOpenDeviationByTrip(ctx context.Context, tripID int64) (Rou
 		&i.Notes,
 	)
 	return i, err
+}
+
+const listActiveTripsOffRoute = `-- name: ListActiveTripsOffRoute :many
+SELECT
+    t.id               AS trip_id,
+    t.origin_facility_id,
+    t.driver_id,
+    t.vehicle_id,
+    ge.event_timestamp AS last_gps_at,
+    ROUND(
+        ST_Distance(
+            t.route_polyline::geography,
+            ST_SetSRID(ST_MakePoint(ge.longitude, ge.latitude), 4326)::geography
+        )::NUMERIC,
+        2
+    )                  AS deviation_meters
+FROM trips t
+JOIN LATERAL (
+    SELECT latitude, longitude, event_timestamp
+    FROM gps_events
+    WHERE trip_id = t.id
+    ORDER BY event_timestamp DESC
+    LIMIT 1
+) ge ON TRUE
+WHERE t.status IN ('IN_TRANSIT', 'ARRIVED', 'UNLOADING')
+  AND t.route_polyline IS NOT NULL
+`
+
+type ListActiveTripsOffRouteRow struct {
+	TripID           int64              `json:"trip_id"`
+	OriginFacilityID int64              `json:"origin_facility_id"`
+	DriverID         int64              `json:"driver_id"`
+	VehicleID        int64              `json:"vehicle_id"`
+	LastGpsAt        pgtype.Timestamptz `json:"last_gps_at"`
+	DeviationMeters  decimal.Decimal    `json:"deviation_meters"`
+}
+
+func (q *Queries) ListActiveTripsOffRoute(ctx context.Context) ([]ListActiveTripsOffRouteRow, error) {
+	rows, err := q.db.Query(ctx, listActiveTripsOffRoute)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveTripsOffRouteRow{}
+	for rows.Next() {
+		var i ListActiveTripsOffRouteRow
+		if err := rows.Scan(
+			&i.TripID,
+			&i.OriginFacilityID,
+			&i.DriverID,
+			&i.VehicleID,
+			&i.LastGpsAt,
+			&i.DeviationMeters,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listDeviationsByTrip = `-- name: ListDeviationsByTrip :many

@@ -52,20 +52,41 @@ func main() {
 	}
 
 	notifSvc := service.NewNotificationService(q, tgClient)
+	notifications := service.NewNotificationCoordinator(q, notifSvc)
 	escalationSvc := service.NewWeightBridgeEscalationService(q, notifSvc)
-	_, _ = c.AddFunc("*/30 * * * *", func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		defer cancel()
+	expirySvc := service.NewExpiryNotificationService(q, notifications)
+	routeDeviationMonitor := service.NewRouteDeviationMonitorService(q)
+	routeDeviationAlerts := service.NewRouteDeviationAlertService(q, notifications)
+	routeDeviationSvc := service.NewRouteDeviationWorkerService(routeDeviationMonitor, routeDeviationAlerts)
+	linkCleanupSvc := service.NewTelegramLinkCleanupService(q)
 
+	_, _ = c.AddFunc("*/30 * * * *", service.NewLoggedJob(log.Default(), "weight bridge escalation", 2*time.Minute, func(ctx context.Context) error {
 		n, err := escalationSvc.Run(ctx)
-		if err != nil {
-			log.Printf("weight bridge escalation job failed: %v", err)
-			return
-		}
-		if n > 0 {
-			log.Printf("weight bridge escalation job: escalated %d readings", n)
-		}
-	})
+		service.LogJobCount(log.Default(), "weight bridge escalation", n)
+		return err
+	}))
+	_, _ = c.AddFunc("* * * * *", service.NewLoggedJob(log.Default(), "route deviation alert", 2*time.Minute, func(ctx context.Context) error {
+		created, resolved, alerted, err := routeDeviationSvc.Run(ctx)
+		service.LogJobCount(log.Default(), "route deviation detected", created)
+		service.LogJobCount(log.Default(), "route deviation resolved", resolved)
+		service.LogJobCount(log.Default(), "route deviation alert", alerted)
+		return err
+	}))
+	_, _ = c.AddFunc("0 7 * * *", service.NewLoggedJob(log.Default(), "driver license expiry notification", 2*time.Minute, func(ctx context.Context) error {
+		n, err := expirySvc.NotifyExpiringLicenses(ctx)
+		service.LogJobCount(log.Default(), "driver license expiry notification", n)
+		return err
+	}))
+	_, _ = c.AddFunc("0 7 * * *", service.NewLoggedJob(log.Default(), "vehicle keur expiry notification", 2*time.Minute, func(ctx context.Context) error {
+		n, err := expirySvc.NotifyExpiringKeur(ctx)
+		service.LogJobCount(log.Default(), "vehicle keur expiry notification", n)
+		return err
+	}))
+	_, _ = c.AddFunc("0 2 * * *", service.NewLoggedJob(log.Default(), "telegram link token cleanup", 2*time.Minute, func(ctx context.Context) error {
+		n, err := linkCleanupSvc.CleanupExpired(ctx)
+		service.LogJobCount64(log.Default(), "telegram link token cleanup", n)
+		return err
+	}))
 
 	botCtx, botCancel := context.WithCancel(context.Background())
 	if cfg.TelegramBotToken != "" {

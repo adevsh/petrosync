@@ -510,21 +510,34 @@ func NewResetPasswordHandler(store UserPasswordStore, notifier NotifyReset) *Res
 }
 
 type resetPasswordRequest struct {
-	UserID int64 `json:"user_id" binding:"required"`
+	UserID int64 `json:"user_id"`
 }
 
 func (h *ResetPasswordHandler) ResetPassword(c *gin.Context) {
-	var req resetPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()}})
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || userID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "invalid user id"}})
 		return
 	}
 
-	user, err := h.store.GetUser(c.Request.Context(), req.UserID)
+	var req resetPasswordRequest
+	if c.Request.ContentLength > 0 && c.ContentType() == "application/json" {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": err.Error()}})
+			return
+		}
+	}
+	if req.UserID != 0 && req.UserID != userID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "VALIDATION_ERROR", "message": "user id mismatch"}})
+		return
+	}
+
+	user, err := h.store.GetUser(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "NOT_FOUND", "message": "user not found"}})
 		return
 	}
+	middleware.SetAuditBefore(c, user)
 
 	tempPassword, err := generateTempPassword(12)
 	if err != nil {
@@ -539,30 +552,41 @@ func (h *ResetPasswordHandler) ResetPassword(c *gin.Context) {
 	}
 
 	if err := h.store.UpdateUserPassword(c.Request.Context(), db.UpdateUserPasswordParams{
-		ID: req.UserID, PasswordHash: string(hashed),
+		ID: userID, PasswordHash: string(hashed),
 	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
 
-	_ = h.store.SetForcePasswordChange(c.Request.Context(), req.UserID)
+	_ = h.store.SetForcePasswordChange(c.Request.Context(), userID)
 
-	// Notify via Telegram DM if linked
+	// Notify via Telegram DM if linked; if delivery fails, fall back to one-time display.
 	linked := user.TelegramUserID.Valid && user.TelegramUserID.Int64 > 0
+	deliveredByTelegram := false
 	if linked && h.notifier != nil {
 		msg := "Your PetroSync password has been reset. Temporary password: " + tempPassword +
 			"\nYou will be prompted to change it on next login."
-		_ = h.notifier.SendTelegramDM(c.Request.Context(), user.TelegramUserID.Int64, msg)
+		if err := h.notifier.SendTelegramDM(c.Request.Context(), user.TelegramUserID.Int64, msg); err == nil {
+			deliveredByTelegram = true
+		}
 	}
 
 	middleware.SetAuditAction(c, "USER_PASSWORD_RESET")
-	middleware.SetAuditEntity(c, "users", req.UserID)
+	middleware.SetAuditEntity(c, "users", userID)
+	if after, err := h.store.GetUser(c.Request.Context(), userID); err == nil {
+		middleware.SetAuditAfter(c, after)
+	}
 
-	c.JSON(http.StatusOK, gin.H{"data": gin.H{
-		"message":         "password reset",
-		"telegram_linked": linked,
-		"temp_password":   tempPassword,
-	}})
+	data := gin.H{
+		"message":            "password reset",
+		"telegram_linked":    linked,
+		"telegram_delivered": deliveredByTelegram,
+	}
+	if !deliveredByTelegram {
+		data["temp_password"] = tempPassword
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": data})
 }
 
 func generateTempPassword(length int) (string, error) {

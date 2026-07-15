@@ -64,6 +64,11 @@ func (c *Client) SendMessage(ctx context.Context, chatID int64, text string) (in
 	return out.Result.MessageID, nil
 }
 
+func (c *Client) SendTelegramDM(ctx context.Context, telegramUserID int64, message string) error {
+	_, err := c.SendMessage(ctx, telegramUserID, message)
+	return err
+}
+
 type Update struct {
 	UpdateID int64    `json:"update_id"`
 	Message  *Message `json:"message,omitempty"`

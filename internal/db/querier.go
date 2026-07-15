@@ -269,6 +269,7 @@ type Querier interface {
 	ListActiveTripsByFacilityScope(ctx context.Context, originFacilityID int64) ([]ListActiveTripsByFacilityScopeRow, error)
 	ListActiveTripsByRefineryScope(ctx context.Context, refineryID int64) ([]ListActiveTripsByRefineryScopeRow, error)
 	ListActiveTripsByStationScope(ctx context.Context, destinationStationID pgtype.Int8) ([]ListActiveTripsByStationScopeRow, error)
+	ListActiveTripsOffRoute(ctx context.Context) ([]ListActiveTripsOffRouteRow, error)
 	// Real-time dashboard map: latest GPS position per active trip via LATERAL join.
 	ListActiveTripsWithLatestGPS(ctx context.Context) ([]ListActiveTripsWithLatestGPSRow, error)
 	ListActiveUsers(ctx context.Context) ([]ListActiveUsersRow, error)

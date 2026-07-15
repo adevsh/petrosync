@@ -16,13 +16,13 @@ import (
 
 // DeliveryOrderHandler handles delivery order endpoints.
 type DeliveryOrderHandler struct {
-	querier  *db.Queries
-	workflow *service.WorkflowService
-	notif    *service.NotificationService
+	querier       *db.Queries
+	workflow      *service.WorkflowService
+	notifications *service.NotificationCoordinator
 }
 
-func NewDeliveryOrderHandler(querier *db.Queries, workflow *service.WorkflowService, notif *service.NotificationService) *DeliveryOrderHandler {
-	return &DeliveryOrderHandler{querier: querier, workflow: workflow, notif: notif}
+func NewDeliveryOrderHandler(querier *db.Queries, workflow *service.WorkflowService, notifications *service.NotificationCoordinator) *DeliveryOrderHandler {
+	return &DeliveryOrderHandler{querier: querier, workflow: workflow, notifications: notifications}
 }
 
 func (h *DeliveryOrderHandler) ListByFacility(c *gin.Context) {
@@ -76,12 +76,12 @@ func (h *DeliveryOrderHandler) Create(c *gin.Context) {
 	middleware.SetAuditEntity(c, "delivery_orders", do.ID)
 	middleware.SetAuditAfter(c, do)
 
-	// Fire-and-forget notification
-	if h.notif != nil {
-		go h.notif.Send(c.Request.Context(), service.SendNotificationRequest{
-			DOID: &do.ID, NotificationType: db.NotificationTypeTDORAISED,
-			MessageText: fmt.Sprintf("DO %s created", do.DoNumber),
-		})
+	if h.notifications != nil {
+		go func() {
+			if err := h.notifications.NotifyDORaised(c.Request.Context(), do); err != nil {
+				fmt.Printf("delivery order raised notification failed: %v\n", err)
+			}
+		}()
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"data": do})
@@ -107,6 +107,13 @@ func (h *DeliveryOrderHandler) Approve(c *gin.Context) {
 	middleware.SetAuditAction(c, "DELIVERY_ORDER_APPROVE")
 	middleware.SetAuditEntity(c, "delivery_orders", id)
 	middleware.SetAuditAfter(c, do)
+	if h.notifications != nil {
+		go func() {
+			if err := h.notifications.NotifyDOApproved(c.Request.Context(), do); err != nil {
+				fmt.Printf("delivery order approved notification failed: %v\n", err)
+			}
+		}()
+	}
 	c.JSON(http.StatusOK, gin.H{"data": do})
 }
 
@@ -136,6 +143,13 @@ func (h *DeliveryOrderHandler) AssignVehicleAndDriver(c *gin.Context) {
 	middleware.SetAuditAction(c, "DELIVERY_ORDER_ASSIGN")
 	middleware.SetAuditEntity(c, "delivery_orders", id)
 	middleware.SetAuditAfter(c, do)
+	if h.notifications != nil {
+		go func() {
+			if err := h.notifications.NotifyTripAssigned(c.Request.Context(), do); err != nil {
+				fmt.Printf("trip assigned notification failed: %v\n", err)
+			}
+		}()
+	}
 	c.JSON(http.StatusOK, gin.H{"data": do})
 }
 

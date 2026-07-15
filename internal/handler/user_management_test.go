@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -60,6 +61,53 @@ func (f *fakeUserQuerier) RevokeRole(ctx context.Context, arg db.RevokeRoleParam
 type fakeUserCache struct {
 	deletedRBAC   []int64
 	deletedActive []int64
+}
+
+type fakePasswordStore struct {
+	user              db.GetUserRow
+	updatePasswordArg *db.UpdateUserPasswordParams
+	forcePasswordID   int64
+}
+
+func (f *fakePasswordStore) GetUser(ctx context.Context, id int64) (db.GetUserRow, error) {
+	if f.user.ID != id {
+		return db.GetUserRow{}, errors.New("not found")
+	}
+	out := f.user
+	if f.forcePasswordID == id {
+		out.ForcePasswordChange = true
+	}
+	return out, nil
+}
+
+func (f *fakePasswordStore) GetUserByUsername(ctx context.Context, username string) (db.User, error) {
+	return db.User{}, nil
+}
+
+func (f *fakePasswordStore) UpdateUserPassword(ctx context.Context, arg db.UpdateUserPasswordParams) error {
+	f.updatePasswordArg = &arg
+	return nil
+}
+
+func (f *fakePasswordStore) SetForcePasswordChange(ctx context.Context, id int64) error {
+	f.forcePasswordID = id
+	return nil
+}
+
+func (f *fakePasswordStore) GetUserPasswordHash(ctx context.Context, id int64) (string, error) {
+	return "", nil
+}
+
+type fakeResetNotifier struct {
+	telegramUserID int64
+	message        string
+	err            error
+}
+
+func (f *fakeResetNotifier) SendTelegramDM(ctx context.Context, telegramUserID int64, message string) error {
+	f.telegramUserID = telegramUserID
+	f.message = message
+	return f.err
 }
 
 func (f *fakeUserCache) DeleteRoleGrants(ctx context.Context, userID int64) error {
@@ -191,5 +239,94 @@ func TestUserHandler_GrantRole_RequiresScopeIDForNonCompany(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestResetPasswordHandler_HidesTempPasswordWhenTelegramDelivered(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	store := &fakePasswordStore{
+		user: db.GetUserRow{
+			ID:             7,
+			Username:       "driver1",
+			FullName:       "Driver One",
+			TelegramUserID: pgtype.Int8{Int64: 777, Valid: true},
+			Active:         true,
+		},
+	}
+	notifier := &fakeResetNotifier{}
+	h := NewResetPasswordHandler(store, notifier)
+
+	r := gin.New()
+	r.POST("/users/:id/reset-password", h.ResetPassword)
+
+	req := httptest.NewRequest(http.MethodPost, "/users/7/reset-password", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	if store.updatePasswordArg == nil || store.updatePasswordArg.ID != 7 {
+		t.Fatalf("expected password update for user 7, got %#v", store.updatePasswordArg)
+	}
+	if store.forcePasswordID != 7 {
+		t.Fatalf("expected force-password-change for user 7, got %d", store.forcePasswordID)
+	}
+	if notifier.telegramUserID != 777 {
+		t.Fatalf("expected Telegram DM to 777, got %d", notifier.telegramUserID)
+	}
+
+	var resp struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if _, ok := resp.Data["temp_password"]; ok {
+		t.Fatalf("expected temp_password hidden when Telegram delivery succeeds: %#v", resp.Data)
+	}
+	if resp.Data["telegram_delivered"] != true {
+		t.Fatalf("expected telegram_delivered=true, got %#v", resp.Data["telegram_delivered"])
+	}
+}
+
+func TestResetPasswordHandler_ShowsTempPasswordWhenTelegramUnavailable(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	store := &fakePasswordStore{
+		user: db.GetUserRow{
+			ID:             9,
+			Username:       "driver2",
+			FullName:       "Driver Two",
+			TelegramUserID: pgtype.Int8{Int64: 999, Valid: true},
+			Active:         true,
+		},
+	}
+	notifier := &fakeResetNotifier{err: errors.New("telegram down")}
+	h := NewResetPasswordHandler(store, notifier)
+
+	r := gin.New()
+	r.POST("/users/:id/reset-password", h.ResetPassword)
+
+	req := httptest.NewRequest(http.MethodPost, "/users/9/reset-password", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var resp struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if _, ok := resp.Data["temp_password"]; !ok {
+		t.Fatalf("expected temp_password fallback when Telegram delivery fails: %#v", resp.Data)
+	}
+	if resp.Data["telegram_delivered"] != false {
+		t.Fatalf("expected telegram_delivered=false, got %#v", resp.Data["telegram_delivered"])
 	}
 }

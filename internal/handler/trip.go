@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -16,13 +17,14 @@ import (
 
 // TripHandler handles trip endpoints.
 type TripHandler struct {
-	querier  *db.Queries
-	workflow *service.WorkflowService
-	photos   *service.TripPhotoService
+	querier       *db.Queries
+	workflow      *service.WorkflowService
+	photos        *service.TripPhotoService
+	notifications *service.NotificationCoordinator
 }
 
-func NewTripHandler(querier *db.Queries, workflow *service.WorkflowService, photos *service.TripPhotoService) *TripHandler {
-	return &TripHandler{querier: querier, workflow: workflow, photos: photos}
+func NewTripHandler(querier *db.Queries, workflow *service.WorkflowService, photos *service.TripPhotoService, notifications *service.NotificationCoordinator) *TripHandler {
+	return &TripHandler{querier: querier, workflow: workflow, photos: photos, notifications: notifications}
 }
 
 func (h *TripHandler) ListActive(c *gin.Context) {
@@ -116,7 +118,9 @@ func (h *TripHandler) ListEvents(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
-	if events == nil { events = []db.TripEvent{} }
+	if events == nil {
+		events = []db.TripEvent{}
+	}
 	c.JSON(http.StatusOK, gin.H{"data": events})
 }
 
@@ -143,6 +147,13 @@ func (h *TripHandler) CreateEvent(c *gin.Context) {
 	middleware.SetAuditAction(c, "TRIP_EVENT_CREATE")
 	middleware.SetAuditEntity(c, "trips", tripID)
 	middleware.SetAuditAfter(c, event)
+	if h.notifications != nil {
+		go func() {
+			if err := h.notifications.NotifyTripEvent(c.Request.Context(), event); err != nil {
+				log.Printf("trip event notification failed: %v", err)
+			}
+		}()
+	}
 	c.JSON(http.StatusCreated, gin.H{"data": event})
 }
 
@@ -153,7 +164,9 @@ func (h *TripHandler) ListCompartmentDeliveries(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
-	if deliveries == nil { deliveries = []db.ListCompartmentDeliveriesByTripRow{} }
+	if deliveries == nil {
+		deliveries = []db.ListCompartmentDeliveriesByTripRow{}
+	}
 	c.JSON(http.StatusOK, gin.H{"data": deliveries})
 }
 
@@ -164,7 +177,9 @@ func (h *TripHandler) ListSeals(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
-	if seals == nil { seals = []db.ListSealsByTripRow{} }
+	if seals == nil {
+		seals = []db.ListSealsByTripRow{}
+	}
 	c.JSON(http.StatusOK, gin.H{"data": seals})
 }
 
@@ -177,7 +192,9 @@ func (h *TripHandler) ListWeightBridge(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"code": "INTERNAL_ERROR", "message": err.Error()}})
 		return
 	}
-	if readings == nil { readings = []db.WeightBridgeReading{} }
+	if readings == nil {
+		readings = []db.WeightBridgeReading{}
+	}
 	c.JSON(http.StatusOK, gin.H{"data": readings})
 }
 
@@ -195,6 +212,13 @@ func (h *TripHandler) CreateWeightBridge(c *gin.Context) {
 	middleware.SetAuditAction(c, "WEIGHT_BRIDGE_READING_CREATE")
 	middleware.SetAuditEntity(c, "weight_bridge_readings", reading.ID)
 	middleware.SetAuditAfter(c, reading)
+	if h.notifications != nil {
+		go func() {
+			if err := h.notifications.NotifyManualWeightBridgePending(c.Request.Context(), reading); err != nil {
+				log.Printf("manual weight bridge notification failed: %v", err)
+			}
+		}()
+	}
 	c.JSON(http.StatusCreated, gin.H{"data": reading})
 }
 

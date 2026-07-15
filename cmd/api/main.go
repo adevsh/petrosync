@@ -66,9 +66,10 @@ func main() {
 	telegramLinkSvc := service.NewTelegramLinkService(service.NewPgxTelegramLinkStore(dbPool, querier))
 
 	// ── Telegram bot + notification ────────────────────────────────────
+	var tgClient *telegram.Client
 	var notifSvc *service.NotificationService
 	if cfg.TelegramBotToken != "" {
-		tgClient := telegram.NewClient(cfg.TelegramBotToken)
+		tgClient = telegram.NewClient(cfg.TelegramBotToken)
 		notifSvc = service.NewNotificationService(querier, tgClient)
 		go func() {
 			tgBot := bot.NewTelegramBot(tgClient, telegramLinkSvc)
@@ -78,7 +79,7 @@ func main() {
 		notifSvc = service.NewNotificationService(querier, nil)
 		log.Println("TELEGRAM_BOT_TOKEN not set — notifications disabled")
 	}
-	_ = notifSvc
+	notifications := service.NewNotificationCoordinator(querier, notifSvc)
 
 	// ── Handlers ──────────────────────────────────────────────────────
 	authHandler := handler.NewAuthHandler(authService, cfg.JWTSecret)
@@ -88,12 +89,12 @@ func main() {
 	drvHandler := handler.NewDriverHandler(querier)
 	stnHandler := handler.NewStationHandler(querier)
 	tankHandler := handler.NewStorageTankHandler(querier)
-	doHandler := handler.NewDeliveryOrderHandler(querier, workflowSvc, notifSvc)
-	tripHandler := handler.NewTripHandler(querier, workflowSvc, tripPhotoSvc)
+	doHandler := handler.NewDeliveryOrderHandler(querier, workflowSvc, notifications)
+	tripHandler := handler.NewTripHandler(querier, workflowSvc, tripPhotoSvc, notifications)
 	gpsHandler := handler.NewGPSHandler(querier, valkeySvc)
 	qrHandler := handler.NewQRHandler(querier)
 	tgLinkTokenHandler := handler.NewTelegramLinkTokenHandler(querier)
-	resetPwHandler := handler.NewResetPasswordHandler(querier, nil)
+	resetPwHandler := handler.NewResetPasswordHandler(querier, tgClient)
 	wsHub := ws.NewHub()
 	wsBridgeCtx, wsBridgeCancel := context.WithCancel(context.Background())
 	wsSub := valkeySvc.Client().B().Psubscribe().Pattern("ws:trip:*").Build()

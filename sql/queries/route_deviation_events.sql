@@ -32,6 +32,31 @@ INSERT INTO route_deviation_events (
 )
 RETURNING *;
 
+-- name: ListActiveTripsOffRoute :many
+SELECT
+    t.id               AS trip_id,
+    t.origin_facility_id,
+    t.driver_id,
+    t.vehicle_id,
+    ge.event_timestamp AS last_gps_at,
+    ROUND(
+        ST_Distance(
+            t.route_polyline::geography,
+            ST_SetSRID(ST_MakePoint(ge.longitude, ge.latitude), 4326)::geography
+        )::NUMERIC,
+        2
+    )                  AS deviation_meters
+FROM trips t
+JOIN LATERAL (
+    SELECT latitude, longitude, event_timestamp
+    FROM gps_events
+    WHERE trip_id = t.id
+    ORDER BY event_timestamp DESC
+    LIMIT 1
+) ge ON TRUE
+WHERE t.status IN ('IN_TRANSIT', 'ARRIVED', 'UNLOADING')
+  AND t.route_polyline IS NOT NULL;
+
 -- name: UpdateDeviationDuration :one
 -- Called when a deviation is resolved to record total duration.
 UPDATE route_deviation_events

@@ -879,23 +879,23 @@ Each job runs in its own goroutine. Use `recover()` in every job — a panic mus
 - [x] Delivery order CRUD + approve + assign + cancel
 - [x] DO items CRUD
 - [x] Weight bridge: create, approve, escalate, reject
-- [ ] Weight bridge approval chain service (block LOADED until approved)
+- [x] Weight bridge approval chain service (block LOADED until approved)
 - [x] Trip CRUD + status transitions (all state machine steps)
 - [x] Trip event: POST with UUID idempotency check
 - [x] QR validation service + `/api/v1/qr/validate` endpoint
 - [x] Compartment delivery: create, update loaded/delivered volume, status
 - [x] Compartment seal: issue, verify
-- [ ] Storage tank reservation/deduction/credit (atomic transactions)
-- [ ] Variance engine service
-- [ ] Station tank volume update post-delivery
-- [ ] Mandatory photo check service
-- [ ] Photo upload endpoint → Garage client
+- [x] Storage tank reservation/deduction/credit (atomic transactions)
+- [x] Variance engine service
+- [x] Station tank volume update post-delivery
+- [x] Mandatory photo check service
+- [x] Photo upload endpoint → Garage client
 - [x] GPS batch endpoint + Valkey pub/sub publish
 - [x] WebSocket hub + `/ws/trips/active`
 - [ ] Telegram notification service (all trigger types from Section 12)
-- [ ] Audit log writes on all state changes
-- [ ] User CRUD + role grant/revoke
-- [ ] Password reset flow
+- [x] Audit log writes on all state changes
+- [x] User CRUD + role grant/revoke
+- [x] Password reset flow
 
 ### Dashboard Tasks
 
@@ -920,15 +920,15 @@ Each job runs in its own goroutine. Use `recover()` in every job — a panic mus
 
 **Goal:** Geofencing, route monitoring, document generation, seal enforcement, return-to-facility flow.
 
-- [ ] Route deviation worker (active trip GPS analysis + deviation event creation)
-- [ ] Route deviation escalation (Telegram after sustained threshold)
+- [x] Route deviation worker (active trip GPS analysis + deviation event creation)
+- [x] Route deviation escalation (Telegram after sustained threshold)
 - [ ] Geofence auto-detection for `ARRIVED_AT_FACILITY` / `ARRIVED_AT_DESTINATION` events
 - [ ] Return-to-facility trip auto-creation on `CANCELLED` mid-route
 - [ ] Seal mismatch hard block on `DELIVERED` transition
 - [ ] PDF generation service: Delivery Order, Bill of Lading, Delivery Receipt
 - [ ] Document endpoints + presigned URL download
 - [ ] Maintenance record CRUD + `UNDER_MAINTENANCE` dispatch block
-- [ ] SIM B2 + keur expiry notification workers (activated in background worker)
+- [x] SIM B2 + keur expiry notification workers (activated in background worker)
 - [ ] Deviation alert badge in HTMX dashboard partials
 
 ---
